@@ -264,6 +264,11 @@ void ConfigSetup::Init(const char *fileName)
         sys.ff.VDW_KIND = sys.ff.VDW_SWITCH_KIND;
 	std::cout << "Switch method will be used to truncate the VDW interaction.\n";
       }
+      else if(line[1] == "FSHIFT")
+      {
+        sys.ff.VDW_KIND = sys.ff.VDW_FSHIFT_KIND;
+	std::cout << "Shifted force method will be applied on VDW interaction.\n";
+      }
     }
     else if(line[0] == "LRC")
     {
@@ -708,9 +713,11 @@ void ConfigSetup::verifyInputs(void)
   {
     std::cout << "Warning: Long Range Correction has been disabled for standard VDW potential type!" << std::endl;
   }
-  if((sys.ff.VDW_KIND == sys.ff.VDW_SHIFT_KIND || sys.ff.VDW_KIND == sys.ff.VDW_SWITCH_KIND) && sys.ff.doTailCorr)
+  //if((sys.ff.VDW_KIND == sys.ff.VDW_SHIFT_KIND || sys.ff.VDW_KIND == sys.ff.VDW_SWITCH_KIND) && sys.ff.doTailCorr)
+  if((sys.ff.VDW_KIND == sys.ff.VDW_SHIFT_KIND || sys.ff.VDW_KIND == sys.ff.VDW_SWITCH_KIND || sys.ff.VDW_KIND == sys.ff.VDW_FSHIFT_KIND) && sys.ff.doTailCorr)	//SMR
   {
-    std::cout << "Warning: Long Range Correction will be disabled for shift and switch potential!" << std::endl;
+    //std::cout << "Warning: Long Range Correction will be disabled for shift and switch potential!" << std::endl;
+    std::cout << "Warning: Long Range Correction will be disabled for shift and switch and shifted force potential!" << std::endl; //SMR
   }
   if(sys.ff.cutoff == DBL_MAX)
   {
@@ -1058,6 +1065,7 @@ const std::string config_setup::PRNGKind::KIND_RANDOM = "RANDOM",
 		config_setup::FFValues::VDW = "VDW",
 		config_setup::FFValues::VDW_SHIFT = "VDW_SHIFT",
 		config_setup::FFValues::VDW_SWITCH = "VDW_SWITCH",
+		config_setup::FFValues::VDW_FSHIFT = "VDW_FSHIFT",	//SMR
 		config_setup::Exclude::EXC_ONETWO = "1-2",
 		config_setup::Exclude::EXC_ONETHREE = "1-3",
 		config_setup::Exclude::EXC_ONEFOUR = "1-4";
@@ -1068,6 +1076,7 @@ const char ConfigSetup::configFileAlias[] = "GO-MC Configuration File";
 const uint config_setup::FFValues::VDW_STD_KIND = 0,
 		config_setup::FFValues::VDW_SHIFT_KIND = 1,
 		config_setup::FFValues::VDW_SWITCH_KIND = 2,
+		config_setup::FFValues::VDW_FSHIFT_KIND = 3,	//SMR
 		config_setup::Exclude::EXC_ONETWO_KIND = 0,
 		config_setup::Exclude::EXC_ONETHREE_KIND = 1,
 		config_setup::Exclude::EXC_ONEFOUR_KIND = 2;

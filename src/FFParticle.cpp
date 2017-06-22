@@ -15,7 +15,8 @@ FFParticle::FFParticle() : mass(NULL), nameFirst(NULL), nameSec(NULL),
 			   Cn_1_4(NULL), sig6(NULL), sign(NULL),
 			   sig6_1_4(NULL), sign_1_4(NULL), rCut(0), rCutSq(0),
 			   rOnSq(0), rOn(0), A6(0), B6(0), C6(0), factor1(0),
-			   factor2(0) {}
+			   factor2(0),
+			   fshiftConst(NULL), fshiftConst_1_4(NULL) {}	//SMR
 
 FFParticle::~FFParticle(void)
 {
@@ -39,6 +40,7 @@ FFParticle::~FFParticle(void)
    delete[] virCorrection;
 
    delete[] shiftConst;
+   delete[] fshiftConst;	//SMR
    delete[] An;
    delete[] Bn;
    delete[] Cn;
@@ -46,6 +48,7 @@ FFParticle::~FFParticle(void)
    delete[] sign;
    // parameter for 1-4 interaction, same one will be used for 1-3 interaction
    delete[] shiftConst_1_4;
+   delete[] fshiftConst_1_4;	//SMR
    delete[] An_1_4;
    delete[] Bn_1_4;
    delete[] Cn_1_4;
@@ -95,6 +98,16 @@ void FFParticle::Init(ff_setup::Particle const& mie,
      shiftConst = new double [size];
      shiftConst_1_4 = new double [size];
    }
+
+   	//SMR <
+   if(vdwKind == sys.ff.VDW_FSHIFT_KIND)	
+   {
+     shiftConst = new double [size];
+     shiftConst_1_4 = new double [size];
+     fshiftConst = new double [size];	//SMR
+     fshiftConst_1_4 = new double [size];	//SMR
+   }	
+	//SMR >
    
    rCut =  sys.ff.cutoff;
    rCutSq = rCut * rCut;
@@ -213,6 +226,38 @@ void FFParticle::AdjNBfix(ff_setup::Particle const& mie,
 	      (repulse_1_4 - attract_1_4);
 	  }
 
+	//SMR <
+	  if(vdwKind == num::VDW_FSHIFT_KIND)
+	  {
+	    //double rRat2 = sigmaSq[j]/rCutSq;	//SMR
+	    double rRat2 = 1.0/9.0;	//SMR
+	    double rRat4 = rRat2 * rRat2;
+	    double attract = rRat4 * rRat2;
+	    //for 1-4 interaction
+	    //double rRat2_1_4 = sigmaSq_1_4[j]/rCutSq;
+	    double rRat2_1_4 = 1.0/9.0;	//SMR
+	    double rRat4_1_4 = rRat2_1_4 * rRat2_1_4;
+	    double attract_1_4 = rRat4_1_4 * rRat2_1_4;
+#ifdef MIE_INT_ONLY
+	    double repulse = num::POW(rRat2, rRat4, attract, n[j]);
+	    double repulse_1_4 =
+	      num::POW(rRat2_1_4, rRat4_1_4, attract_1_4, n_1_4[j]);
+#else
+	    double repulse = pow(sqrt(rRat2), n[j]);
+	    double repulse_1_4 = pow(sqrt(rRat2_1_4), n_1_4[j]);
+#endif
+	    shiftConst[j] =  epsilon_cn[j] * (repulse - attract);
+	    shiftConst_1_4[j] =  epsilon_cn_1_4[j] *
+	      (repulse_1_4 - attract_1_4);
+
+	    fshiftConst[j] =  epsilon_cn[j] * (n[j]*repulse - 6.00*attract);	//SMR
+
+	    fshiftConst_1_4[j] =  epsilon_cn_1_4[j] *
+	      (n[j]*repulse_1_4 - 6.00*attract_1_4);	//SMR
+
+	  }
+	//SMR >
+
 	  if(vdwKind == num::VDW_SWITCH_KIND && isMartini)
 	  {
 	    double pn = n[j];
@@ -305,6 +350,38 @@ void FFParticle::Blend(ff_setup::Particle const& mie, const double rCut)
 	    shiftConst_1_4[idx] =  epsilon_cn_1_4[idx] *
 	      (repulse_1_4 - attract_1_4);
 	  }
+
+//SMR <
+	  if(vdwKind == num::VDW_FSHIFT_KIND)
+	  {
+	    //double rRat2 = sigmaSq[j]/rCutSq;	//SMR
+	    double rRat2 = 1.0/9.0;	//SMR
+	    double rRat4 = rRat2 * rRat2;
+	    double attract = rRat4 * rRat2;
+	    //for 1-4 interaction
+	    //double rRat2_1_4 = sigmaSq_1_4[idx]/rCutSq;
+	    double rRat2_1_4 = 1.0/9.0;	//SMR
+	    double rRat4_1_4 = rRat2_1_4 * rRat2_1_4;
+	    double attract_1_4 = rRat4_1_4 * rRat2_1_4;
+	    
+#ifdef MIE_INT_ONLY
+	    double repulse = num::POW(rRat2, rRat4, attract, n[idx]);
+	    double repulse_1_4 =
+	      num::POW(rRat2_1_4, rRat4_1_4, attract_1_4, n_1_4[idx]);
+#else
+	    double repulse = pow(sqrt(rRat2), n[idx]);
+	    double repulse_1_4 = pow(sqrt(rRat2_1_4), n_1_4[idx]);
+#endif
+	    shiftConst[idx] =  epsilon_cn[idx] * (repulse - attract);
+	    shiftConst_1_4[idx] =  epsilon_cn_1_4[idx] *
+	      (repulse_1_4 - attract_1_4);
+
+	    fshiftConst[idx] =  epsilon_cn[idx] * (n_1_4[idx]*repulse - 6.00*attract);	//SMR
+
+	    fshiftConst_1_4[idx] =  epsilon_cn_1_4[j] *
+	      (n_1_4[idx]*repulse_1_4 - 6.00*attract_1_4);		//SMR
+	  }
+	//SMR >
 	  
 	  if(vdwKind == num::VDW_SWITCH_KIND && isMartini)
 	  {

@@ -102,7 +102,8 @@ protected:
   double * sigmaSq, * epsilon_cn, * epsilon_cn_6, * nOver6,
          * sigmaSq_1_4, * epsilon_cn_1_4, * epsilon_cn_6_1_4, * nOver6_1_4,
          * enCorrection, * virCorrection, *shiftConst, *An, *Bn, *Cn, *sig6, *sign,
-         *shiftConst_1_4, *An_1_4, *Bn_1_4, *Cn_1_4, *sig6_1_4, *sign_1_4;
+         *shiftConst_1_4, *An_1_4, *Bn_1_4, *Cn_1_4, *sig6_1_4, *sign_1_4,
+         *fshiftConst,*fshiftConst_1_4;	//SMR
 
   double rCut, rCutSq, rOn, rOnSq, rOnCoul, A1, B1, C1, A6, B6, C6,
          factor1, factor2, scaling_14, alpha, diElectric_1;

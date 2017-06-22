@@ -74,6 +74,7 @@ set(headers
    FFParticle.h
    FFSetup.h
    FFShift.h
+   FFShiftF.h	#	//SMR
    FFSwitch.h
    FFSwitchMartini.h
    FixedWidthReader.h

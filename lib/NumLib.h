@@ -10,7 +10,8 @@ namespace num
    static const double dbl_margin = 0.00001;
    static const double qqFact = 167000.00;
    static const double BIGNUM = 10E40;
-   static const uint VDW_STD_KIND = 0, VDW_SHIFT_KIND = 1, VDW_SWITCH_KIND = 2;
+   //static const uint VDW_STD_KIND = 0, VDW_SHIFT_KIND = 1, VDW_SWITCH_KIND = 2;
+   static const uint VDW_STD_KIND = 0, VDW_SHIFT_KIND = 1, VDW_SWITCH_KIND = 2, VDW_FSHIFT_KIND = 3;	//SMR
 
    template <typename T>
    inline void BoundGt(double & val, const double bound)

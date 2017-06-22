@@ -116,8 +116,11 @@ namespace config_setup
       bool doTailCorr; 
       std::string kind; 
  
-      static const std::string VDW, VDW_SHIFT, VDW_SWITCH; 
-      static const uint VDW_STD_KIND, VDW_SHIFT_KIND, VDW_SWITCH_KIND; 
+      //static const std::string VDW, VDW_SHIFT, VDW_SWITCH; 
+      //static const uint VDW_STD_KIND, VDW_SHIFT_KIND, VDW_SWITCH_KIND; 
+
+      static const std::string VDW, VDW_SHIFT, VDW_SWITCH, VDW_FSHIFT;	//SMR
+      static const uint VDW_STD_KIND, VDW_SHIFT_KIND, VDW_SWITCH_KIND, VDW_FSHIFT_KIND;	//SMR
    }; 
  
 #if ENSEMBLE == GEMC || ENSEMBLE == NPT

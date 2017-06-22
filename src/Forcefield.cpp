@@ -60,6 +60,8 @@ void Forcefield::InitBasicVals(config_setup::SystemVals const& val,
     particles = new FFParticle();
   else if(vdwKind == val.ff.VDW_SHIFT_KIND)
     particles = new FF_SHIFT();
+  else if(vdwKind == val.ff.VDW_FSHIFT_KIND)	//SMR
+     particles = new FF_FSHIFT();	//SMR
   else if (vdwKind == val.ff.VDW_SWITCH_KIND && ffKind.isMARTINI)
     particles = new FF_SWITCH_MARTINI();
   else

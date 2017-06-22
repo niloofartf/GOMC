@@ -4,6 +4,7 @@
 //Member classes
 #include "FFParticle.h"
 #include "FFShift.h"
+#include "FFShiftF.h"	//SMR
 #include "FFSwitch.h"
 #include "FFSwitchMartini.h"
 #include "FFBonds.h"
