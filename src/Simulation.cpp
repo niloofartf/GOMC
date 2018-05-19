@@ -71,6 +71,9 @@ void Simulation::RunSimulation(void)
     if((step + 1) % 1000 == 0)
       RunningCheck(step);
 #endif
+	if (step % 1000000 == 0) {
+		system->transitionMatrixRef.UpdateWeightingFunction();
+	}
   }
   system->PrintTime();
 }

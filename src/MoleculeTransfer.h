@@ -11,6 +11,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 
 #include "MoveBase.h"
 #include "TrialMol.h"
+#include "TransitionMatrix.h"
 
 //#define DEBUG_MOVES
 
@@ -20,7 +21,7 @@ public:
 
   MoleculeTransfer(System &sys, StaticVals const& statV) :
     ffRef(statV.forcefield), molLookRef(sys.molLookupRef),
-    MoveBase(sys, statV) {}
+    MoveBase(sys, statV), transitionMatrixRef(sys.transitionMatrixRef) {}
 
   virtual uint Prep(const double subDraw, const double movPerc);
   virtual uint Transform();
@@ -42,6 +43,7 @@ private:
   Intermolecular tcLose, tcGain, recipLose, recipGain;
   MoleculeLookup & molLookRef;
   Forcefield const& ffRef;
+  TransitionMatrix & transitionMatrixRef;
 };
 
 inline uint MoleculeTransfer::GetBoxPairAndMol
@@ -160,9 +162,19 @@ inline void MoleculeTransfer::Accept(const uint rejectState, const uint step)
     //safety to make sure move will be rejected in overlap case
     if((newMol.GetEnergy().real < 1.0e15) &&
         (oldMol.GetEnergy().real < 1.0e15)) {
-      result = prng() < molTransCoeff * Wrat;
-    } else
-      result = false;
+		//Gather Transition Matrix GCMC data
+		double acceptance = molTransCoeff * Wrat;
+		#if ENSEMBLE == GCMC
+			transitionMatrixRef.AddAcceptanceProbToMatrix(acceptance, 1);
+		#endif
+		result = prng() < acceptance * transitionMatrixRef.CalculateBias(sourceBox == mv::BOX0);	//CalculateBias returns 1.0 if TM not being used
+	}
+	else {
+		#if ENSEMBLE == GCMC
+			transitionMatrixRef.AddAcceptanceProbToMatrix(0.0, 0);
+		#endif
+		result = false;
+	}
 
     if(result) {
       //Add tail corrections
@@ -217,9 +229,13 @@ inline void MoleculeTransfer::Accept(const uint rejectState, const uint step)
 
     }
 
-  } else //we didn't even try because we knew it would fail
-    result = false;
-
+  }
+  else { //we didn't even try because we knew it would fail
+	  #if ENSEMBLE == GCMC
+		transitionMatrixRef.AddAcceptanceProbToMatrix(0.0, 0);
+	  #endif
+	  result = false;
+  }
   subPick = mv::GetMoveSubIndex(mv::MOL_TRANSFER, sourceBox);
   moveSetRef.Update(result, subPick, step);
 }

@@ -21,6 +21,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "MoleculeTransfer.h"
 #include "IntraSwap.h"
 #include "Regrowth.h"
+#include "TransitionMatrix.h"
 
 System::System(StaticVals& statics) :
   statV(statics),
@@ -37,8 +38,11 @@ System::System(StaticVals& statics) :
   prng(molLookupRef),
   coordinates(boxDimRef, com, molLookupRef, prng, statics.mol),
   com(boxDimRef, coordinates, molLookupRef, statics.mol),
-  moveSettings(boxDimRef), cellList(statics.mol, boxDimRef),
-  calcEnergy(statics, *this)
+  moveSettings(boxDimRef), 
+  cellList(statics.mol, boxDimRef),
+  calcEnergy(statics, *this),
+  transitionMatrix(molLookupRef),
+  transitionMatrixRef(transitionMatrix)
 {
   calcEwald = NULL;
 }
@@ -75,6 +79,7 @@ void System::Init(Setup const& set)
 #ifdef VARIABLE_PARTICLE_NUMBER
   molLookup.Init(statV.mol, set.pdb.atoms);
 #endif
+  transitionMatrix.Init();
   moveSettings.Init(statV, set.pdb.remarks);
   //Note... the following calls use box iterators, so must come after
   //the molecule lookup initialization, in case we're in a constant

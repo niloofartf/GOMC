@@ -19,7 +19,7 @@ public:
 
   IntraSwap(System &sys, StaticVals const& statV) :
     ffRef(statV.forcefield), molLookRef(sys.molLookupRef),
-    MoveBase(sys, statV) {}
+    MoveBase(sys, statV), transitionMatrixRef(sys.transitionMatrixRef) {}
 
   virtual uint Prep(const double subDraw, const double movPerc);
   virtual uint Transform();
@@ -38,6 +38,7 @@ private:
   Intermolecular tcLose, tcGain, recipDiff;
   MoleculeLookup & molLookRef;
   Forcefield const& ffRef;
+  TransitionMatrix & transitionMatrixRef;
 };
 
 inline uint IntraSwap::GetBoxAndMol
@@ -105,6 +106,10 @@ inline void IntraSwap::CalcEn()
 inline void IntraSwap::Accept(const uint rejectState, const uint step)
 {
   bool result;
+  //Transition Matrix GCMC acceptance data collection step
+#if ENSEMBLE == GCMC
+  transitionMatrixRef.AddAcceptanceProbToMatrix(1.0, 0);
+#endif
   //If we didn't skip the move calculation
   if(rejectState == mv::fail_state::NO_FAIL) {
     double molTransCoeff = 1.0;

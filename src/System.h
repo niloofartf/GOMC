@@ -23,6 +23,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "MoveSettings.h"
 #include "CellList.h"
 #include "Clock.h"
+#include "TransitionMatrix.h"
 
 //Initialization variables
 class Setup;
@@ -82,6 +83,8 @@ public:
   //Use as we don't know where they are...
   BoxDimensions & boxDimRef;
   MoleculeLookup & molLookupRef;
+  TransitionMatrix transitionMatrix;
+  TransitionMatrix & transitionMatrixRef;
 
   MoveSettings moveSettings;
   SystemPotential potential;
