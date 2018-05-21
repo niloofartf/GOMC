@@ -164,10 +164,13 @@ inline void MoleculeTransfer::Accept(const uint rejectState, const uint step)
         (oldMol.GetEnergy().real < 1.0e15)) {
 		//Gather Transition Matrix GCMC data
 		double acceptance = molTransCoeff * Wrat;
-		#if ENSEMBLE == GCMC
+		#if	ENSEMBLE == GCMC
 			transitionMatrixRef.AddAcceptanceProbToMatrix(acceptance, 1);
+			result = prng() < acceptance * transitionMatrixRef.CalculateBias(sourceBox == mv::BOX0);	//CalculateBias returns 1.0 if TM not being used
+		#else 
+		result = prng() < acceptance;
 		#endif
-		result = prng() < acceptance * transitionMatrixRef.CalculateBias(sourceBox == mv::BOX0);	//CalculateBias returns 1.0 if TM not being used
+		
 	}
 	else {
 		#if ENSEMBLE == GCMC

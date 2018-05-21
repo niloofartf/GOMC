@@ -71,12 +71,16 @@ void Simulation::RunSimulation(void)
     if((step + 1) % 1000 == 0)
       RunningCheck(step);
 #endif
+	#if ENSEMBLE == GCMC
 	if (step % 1000000 == 0) {
 		system->transitionMatrix.UpdateWeightingFunction();
 	}
+	#endif 
   }
+#if ENSEMBLE == GCMC
   system->transitionMatrix.PrintTMProbabilityDistribution();
   system->PrintTime();
+#endif
 }
 
 #ifndef NDEBUG
