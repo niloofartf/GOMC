@@ -4,22 +4,26 @@ Copyright (C) 2018  GOMC Group
 A copy of the GNU General Public License can be found in the COPYRIGHT.txt
 along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
-//TODO: what type does Printer need to be?
-//TODO: implement printer
-//TODO: find where flags are tracked and add TM flag
-//ConfigSetup: config file has 'flags': is that how it works?
-//maybe make flag # of steps between weightingFunction updates, w/ -1 'off'?
-//Simulation.h has a setup object; maybe initialize TM there?
-//TODO: apply AddAccept/CalcBias to MoleculeTransfer.h
-//Note: MolTransfer has sourceBox = 0 as delete move, find out where that's set to pass to calcs
-//TODO: add bias updating to Simulation.cpp
-//TODO: find end of simulation and add postprocess/printer to it
+//TODO: Add TM flag to ConfigSetup.cpp
+//TODO: print weightingFunction to file instead of console
+//TODO: test for 
+
+//Note: When adding new moves to GOMC, if they might run in a GCMC simulation, the transition matrix 
+//must be updated with the acceptance probability. If the move will not end in the number of particles in the 
+//main simulation box (BOX0) changing, then the acceptance probability can be captured with the following
+//code chunk:
+//	if ENSEMBLE == GCMC
+//		transitionMatrixRef.addAcceptanceProbToMatrix(0.0, 0);
+//	endif
+//Files currently affected: Movebase.h, MoleculeTransfer.h, IntraSwap.h
 
 #ifndef TRANSITIONMATRIX_H
 #define TRANSITIONMATRIX_H
 #include "MoleculeLookup.h"
 #include <vector>
 #include <cmath>
+#include <iostream>
+
 class TransitionMatrix
 {
 public:
@@ -29,10 +33,11 @@ public:
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
 	double CalculateBias(bool isDelMove);
 	void UpdateWeightingFunction();
-	std::vector<double> PostProcessTransitionMatrix(double beta);
-	void TransitionMatrixPrinter();
+	void PrintTMProbabilityDistribution();
 
 private:
+	std::vector<double> PostProcessTransitionMatrix();
+
 	std::vector<double> transitionMatrixDel;
 	std::vector<double> transitionMatrixEtc;
 	std::vector<double> transitionMatrixIns;
@@ -125,14 +130,31 @@ inline void TransitionMatrix::UpdateWeightingFunction()
 
 }
 
-inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix(double beta)
+inline void TransitionMatrix::PrintTMProbabilityDistribution()
+{
+	if (!biasingOn)  
+		return; 
+
+	for (int i = 0; i < weightingFunction.size(); i++) {
+		cout << weightingFunction[i] << ",";
+	}
+
+	cout << "\n";
+	weightingFunction = PostProcessTransitionMatrix();
+
+	for (int i = 0; i < weightingFunction.size(); i++) {
+		cout << weightingFunction[i] << ",";
+	}
+}
+
+inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 {
 	if (!biasingOn)
 		return;
 
 	int maxMolecules = weightingFunction.size();
 	midpoint = maxMolecules / 2;
-	double dChemPot = 0.1;
+	double dChemPot = 0.5;
 	double change = 0.1;
 
 	std::vector<double> newWeightingFunction;
@@ -164,7 +186,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix(double 
 			oldAreaDif = areaDif;
 
 			for (int i = 0; i < weightingFunction.size(); i++) {
-				newWeightingFunction.push_back(weightingFunction[i] + dChemPot * beta*i);
+				newWeightingFunction.push_back(weightingFunction[i] + dChemPot*i);
 			}
 
 			leftArea = 0.0;
@@ -211,15 +233,11 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix(double 
 
 		infLoopPrevention += 1;
 		//Repeatedly solve until peaks and midpoint stabilize; infLoopPrevention prevents oscillation around a point
-	} while ((vaporPeak != oldVaporPeak || midpoint != oldMidpoint || liquidPeak != oldLiquidPeak) && infLoopPrevention<1000);
+	} while ((vaporPeak != oldVaporPeak || midpoint != oldMidpoint || liquidPeak != oldLiquidPeak) && infLoopPrevention<10000);
+
+	cout << "Number of loops required to process biasing data: " << infLoopPrevention << "\n";
 
 	return newWeightingFunction;
-}
-
-inline void TransitionMatrix::TransitionMatrixPrinter()
-{
-	//write weightingFunction to file
-	//Run postprocessing, write to file
 }
 
 #endif

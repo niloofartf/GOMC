@@ -72,9 +72,10 @@ void Simulation::RunSimulation(void)
       RunningCheck(step);
 #endif
 	if (step % 1000000 == 0) {
-		system->transitionMatrixRef.UpdateWeightingFunction();
+		system->transitionMatrix.UpdateWeightingFunction();
 	}
   }
+  system->transitionMatrix.PrintTMProbabilityDistribution();
   system->PrintTime();
 }
 
