@@ -539,7 +539,7 @@ void CalculateEnergy::ParticleInter(double* en, double *real,
   if(box >= BOXES_WITH_U_NB)
     return;
   double distSq, qi_qj_Fact, tempLJ, tempReal;
-  uint i, t;
+  int i, t;
   MoleculeKind const& thisKind = mols.GetKind(molIndex);
   uint kindI = thisKind.AtomKind(partIndex);
   double kindICharge = thisKind.AtomCharge(partIndex);

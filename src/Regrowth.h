@@ -19,7 +19,7 @@ public:
 
   Regrowth(System &sys, StaticVals const& statV) :
     ffRef(statV.forcefield), molLookRef(sys.molLookupRef),
-    MoveBase(sys, statV) {}
+    MoveBase(sys, statV), transitionMatrixRef(sys.transitionMatrixRef) {}
 
   virtual uint Prep(const double subDraw, const double movPerc);
   virtual uint Transform();
@@ -38,6 +38,7 @@ private:
   Intermolecular recipDiff;
   MoleculeLookup & molLookRef;
   Forcefield const& ffRef;
+  TransitionMatrix & transitionMatrixRef;
 };
 
 inline uint Regrowth::GetBoxAndMol
@@ -101,6 +102,9 @@ inline void Regrowth::CalcEn()
 inline void Regrowth::Accept(const uint rejectState, const uint step)
 {
   bool result;
+#if ENSEMBLE == GCMC
+  transitionMatrixRef.AddAcceptanceProbToMatrix(1.0, 0);
+#endif
   //If we didn't skip the move calculation
   if(rejectState == mv::fail_state::NO_FAIL) {
     double Wo = oldMol.GetWeight();
