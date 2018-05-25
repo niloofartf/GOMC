@@ -243,7 +243,10 @@ struct EventSettings { /* : ReadableStepDependentBase*/
   }
 };
 
-
+struct TMMC {
+  bool enable;
+  ulong step;
+};
 
 struct UniqueStr { /* : ReadableBase*/
   std::string val;
