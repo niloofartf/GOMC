@@ -28,8 +28,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 class TransitionMatrix
 {
 public:
-	TransitionMatrix(MoleculeLookup & molLook) : transitionMatrixDel({ (double)0.0 }), transitionMatrixEtc({ (double)0.0 }),
-		transitionMatrixIns({ (double)0.0 }), weightingFunction({ (double)1.0 }), molLookRef(molLook) {}
+	TransitionMatrix(MoleculeLookup & molLook) : molLookRef(molLook) {};
 	void Init(double boxVol, double temp);
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
 	double CalculateBias(bool isDelMove);
@@ -42,7 +41,7 @@ private:
 	std::vector<double> transitionMatrixDel;		//Tracks sum of acceptance probabilities of deletion moves
 	std::vector<double> transitionMatrixEtc;		//Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
 	std::vector<double> transitionMatrixIns;		//Tracks sum of acceptance probabilities of insertion moves
-	std::vector<double> weightingFunction;
+	std::vector<double> weightingFunction;			//Holds calculated biasing function
 	int vaporPeak, midpoint, liquidPeak;
 	uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 (works with single component systems only)
 	double boxVolume, temperature;
@@ -69,11 +68,11 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 	if (!biasingOn)
 		return;
 	uint numMolecules = molLookRef.NumKindInBox(molKind, 0);
-	if (numMolecules == transitionMatrixDel.size()) {
+	while (numMolecules >= transitionMatrixDel.size()) {
 		transitionMatrixDel.push_back((double)0.0);
 		transitionMatrixEtc.push_back((double)0.0);
 		transitionMatrixIns.push_back((double)0.0);
-		weightingFunction.push_back(weightingFunction[numMolecules - 1]);
+		weightingFunction.push_back(weightingFunction[weightingFunction.size() - 1]);
 	}
 
 	if (acceptanceProbability > 1.0)
