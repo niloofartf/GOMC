@@ -24,6 +24,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 
 #if ENSEMBLE == GCMC
 #include <sstream>  //for reading in variable # of chem. pot.
+#include "TransitionMatrix.h" //For toggling biasing on/off
 #endif
 
 namespace config_setup

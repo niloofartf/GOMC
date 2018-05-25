@@ -188,6 +188,11 @@ double BoxDimensions::GetTotVolume() const
   return sum;
 }
 
+double BoxDimensions::GetBoxVolume(int b) const
+{
+	return volume[b];
+}
+
 void BoxDimensions::SetVolume(const uint b, const double vol)
 {
   if(constArea) {

@@ -30,7 +30,7 @@ class TransitionMatrix
 public:
 	TransitionMatrix(MoleculeLookup & molLook) : transitionMatrixDel({ (double)0.0 }), transitionMatrixEtc({ (double)0.0 }),
 		transitionMatrixIns({ (double)0.0 }), weightingFunction({ (double)1.0 }), molLookRef(molLook) {}
-	void Init();
+	void Init(double boxVol, double temp);
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
 	double CalculateBias(bool isDelMove);
 	void UpdateWeightingFunction();
@@ -39,20 +39,23 @@ public:
 private:
 	std::vector<double> PostProcessTransitionMatrix();
 
-	std::vector<double> transitionMatrixDel;		//Tracks sums of acceptance probabilities of deletion moves
-	std::vector<double> transitionMatrixEtc;		//Tracks sums of acceptance probabilities of all other moves
-	std::vector<double> transitionMatrixIns;		//Tracks sums of acceptance probabilities of insertion moves
+	std::vector<double> transitionMatrixDel;		//Tracks sum of acceptance probabilities of deletion moves
+	std::vector<double> transitionMatrixEtc;		//Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
+	std::vector<double> transitionMatrixIns;		//Tracks sum of acceptance probabilities of insertion moves
 	std::vector<double> weightingFunction;
 	int vaporPeak, midpoint, liquidPeak;
-	uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 (single component systems only)
+	uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 (works with single component systems only)
+	double boxVolume, temperature;
 	MoleculeLookup & molLookRef;			//Used to reference number of molecules of interest in the main box
 	bool biasingOn;							//Config flag, turns biasing on or off
 };
 
 
-inline void TransitionMatrix::Init() {
+inline void TransitionMatrix::Init(double boxVol, double temp) {
 	biasingOn = true;
 	molKind = 0;
+	boxVolume = boxVol;
+	temperature = temp;
 	transitionMatrixDel.push_back((double)0.0);
 	transitionMatrixEtc.push_back((double)0.0);
 	transitionMatrixIns.push_back((double)0.0);
@@ -151,12 +154,27 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	for (int i = 0; i < weightingFunction.size()-1; i++) {
 		std::cout << weightingFunction[i] << ",";
 	}
+	std::cout << weightingFunction[weightingFunction.size() - 1];
+	
 	weightingFunction = PostProcessTransitionMatrix();
-	std::cout << "Equilibrium Particle Number Probability Distribution:" << "\n";
+	
+	std::cout << "\nEquilibrium Particle Number Probability Distribution:" << "\n";
 	for (int i = 0; i < weightingFunction.size()-1; i++) {
 		std::cout << weightingFunction[i] << ",";
 	}
 	std::cout << weightingFunction[weightingFunction.size() - 1] << "\n";
+	
+	//Calc/print vapor/liquid densities here (peaks/volume?)
+	std::cout << "Box volume: " << boxVolume << "Vapor peak: " << vaporPeak << " Liquid peak: " << liquidPeak << "\n";
+
+	double sumFunction = 0.0;
+	for (int i = 0; i < weightingFunction.size(); i++) {
+		sumFunction += weightingFunction[i];
+	}
+
+	double KBTimesTenToTheThirtieth = 13806485.2;			//Boltzmann constant times 10^30 (box volume from cubic angstroms to cubic meters)
+	double vaporPressure = (log(sumFunction) - log(weightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
+	std::cout << "Vapor pressure: " << vaporPressure << "\n";
 }
 
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()

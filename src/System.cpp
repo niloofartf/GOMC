@@ -79,7 +79,7 @@ void System::Init(Setup const& set)
 #ifdef VARIABLE_PARTICLE_NUMBER
   molLookup.Init(statV.mol, set.pdb.atoms);
 #endif
-  transitionMatrix.Init();
+  transitionMatrix.Init(boxDimRef.GetBoxVolume(mv::BOX0), set.config.sys.T.inKelvin);
   moveSettings.Init(statV, set.pdb.remarks);
   //Note... the following calls use box iterators, so must come after
   //the molecule lookup initialization, in case we're in a constant
@@ -161,6 +161,7 @@ void System::RunMove(uint majKind, double draw, const uint step)
   if (rejectState == mv::fail_state::NO_FAIL)
     CalcEn(majKind);
   Accept(majKind, rejectState, step);
+  
 }
 
 uint System::SetParams(const uint kind, const double draw)

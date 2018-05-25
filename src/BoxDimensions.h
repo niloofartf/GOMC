@@ -46,6 +46,8 @@ public:
 
   double GetTotVolume() const;
 
+  double GetBoxVolume(int b) const;
+
   virtual void SetVolume(const uint b, const double vol);
 
   virtual uint ShiftVolume(BoxDimensions & newDim, XYZ & scale,
