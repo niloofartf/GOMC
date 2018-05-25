@@ -72,7 +72,7 @@ void Simulation::RunSimulation(void)
       RunningCheck(step);
 #endif
 	#if ENSEMBLE == GCMC
-	if ((step + 1) % 100000 == 0) {
+	if ((step + 1) % 500000 == 0) {
 		system->transitionMatrix.UpdateWeightingFunction();
 	}
 	#endif 
