@@ -56,8 +56,6 @@ ConfigSetup::ConfigSetup(void)
   sys.exclude.EXCLUDE_KIND = UINT_MAX;
   in.prng.kind = "";
   in.files.param.name = "";
-  out.statistics.settings.TMMC.enable = false;
-  out.statistics.settings.TMMC.step = ULONG_MAX;
   for(i = 0; i < BOX_TOTAL; i++) {
     in.files.pdb.name[i] = "";
     in.files.psf.name[i] = "";
@@ -94,6 +92,8 @@ ConfigSetup::ConfigSetup(void)
   out.state.files.hist.number = "";
   out.state.files.hist.sampleName = "";
   out.state.files.hist.stepsPerHistSample = UINT_MAX;
+  out.state.files.tmmc.enable = false;
+  out.state.files.tmmc.step = ULONG_MAX;
 #endif
   out.statistics.settings.uniqueStr.val = "";
   out.state.settings.frequency = ULONG_MAX;
@@ -549,11 +549,14 @@ void ConfigSetup::Init(const char *fileName)
       printf("%-40s %-d \n", "Info: Histogram sample frequency",
              out.state.files.hist.stepsPerHistSample);
     } else if(line[0] == "TMMC") {
-      out.statistics.settings.TMMC.enable = checkBool(line[1]);
+      out.state.files.tmmc.enable = checkBool(line[1]);
+      if(out.state.files.tmmc.enable) {
+        printf("%-40s \n", "Info: TMMC active.");
+      }
     } else if(line[0] == "BiasStep") {
-      out.statistics.settings.TMMC.step = stringtoi(line[1]);
-      printf("%-40s %-lu \n", "Info: TMMC bias step",
-             out.statistics.settings.TMMC.step);
+      out.state.files.tmmc.step = stringtoi(line[1]);
+      printf("%-40s %-4lu \n", "Info: TMMC bias step",
+             out.state.files.tmmc.step);
     }
 #endif
     else if(line[0] == "OutEnergy") {
@@ -963,6 +966,10 @@ void ConfigSetup::verifyInputs(void)
     std::cout << "Error: Histogram output sample frequency is not specified!\n";
     exit(EXIT_FAILURE);
   }
+  if(out.state.files.tmmc.enable && out.state.files.tmmc.step == ULONG_MAX) {
+    out.state.files.tmmc.step = 1000000;
+    printf("%-40s %-4lu \n", "Default: TMMC bias step", out.state.files.tmmc.step);
+  }
 #endif
   if(!out.statistics.settings.block.enable && out.statistics.vars.energy.block) {
     printf("Note: Average output Inactived. Energy average output will be ignored.\n");
@@ -980,10 +987,6 @@ void ConfigSetup::verifyInputs(void)
   if(!sys.step.pressureCalc && out.statistics.vars.surfaceTension.block) {
     printf("Note: Pressure Calculation Inactived. Surface Tension average output will be ignored.\n");
     out.statistics.vars.surfaceTension.block = false;
-  }
-  if(out.statistics.settings.TMMC.enable && out.statistics.settings.TMMC.step == ULONG_MAX) {
-    out.statistics.settings.TMMC.step = 1000000;
-    printf("%-40s %-10d \n", "Default: TMMC bias step", out.statistics.settings.TMMC.step);
   }
 #ifdef VARIABLE_PARTICLE_NUMBER
   if(!out.statistics.settings.block.enable && out.statistics.vars.molNum.block) {

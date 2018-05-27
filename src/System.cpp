@@ -41,8 +41,7 @@ System::System(StaticVals& statics) :
   moveSettings(boxDimRef), 
   cellList(statics.mol, boxDimRef),
   calcEnergy(statics, *this),
-  transitionMatrix(molLookupRef),
-  transitionMatrixRef(transitionMatrix)
+  transitionMatrix(statics, *this)
 {
   calcEwald = NULL;
 }
@@ -79,7 +78,7 @@ void System::Init(Setup const& set)
 #ifdef VARIABLE_PARTICLE_NUMBER
   molLookup.Init(statV.mol, set.pdb.atoms);
 #endif
-  transitionMatrix.Init(boxDimRef.GetBoxVolume(mv::BOX0), set.config.sys.T.inKelvin);
+  transitionMatrix.Init(set.out);
   moveSettings.Init(statV, set.pdb.remarks);
   //Note... the following calls use box iterators, so must come after
   //the molecule lookup initialization, in case we're in a constant

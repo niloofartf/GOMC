@@ -84,7 +84,6 @@ public:
   BoxDimensions & boxDimRef;
   MoleculeLookup & molLookupRef;
   TransitionMatrix transitionMatrix;
-  TransitionMatrix & transitionMatrixRef;
 
   MoveSettings moveSettings;
   SystemPotential potential;

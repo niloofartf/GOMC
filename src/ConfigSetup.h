@@ -262,6 +262,7 @@ struct OutFiles {
   FileNames<BOX_TOTAL> pdb;
   FileName psf, seed;
   HistFiles hist;
+  TMMC tmmc;
 };
 struct Settings {
   EventSettings block, hist;

@@ -20,41 +20,60 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 
 #ifndef TRANSITIONMATRIX_H
 #define TRANSITIONMATRIX_H
+#include "EnsemblePreprocessor.h"
+#include "System.h"                 //For init
+#include "StaticVals.h"             //For init
+#include "Forcefield.h"
 #include "MoleculeLookup.h"
+#include "BoxDimensions.h"
+#include "BoxDimensionsNonOrth.h"
 #include <vector>
 #include <cmath>
 #include <iostream>
 
+class System;
+class StaticVals;
+class Forcefield;
+class MoleculeLookup;
+class MoleculeKind;
+class BoxDimensions;
+
 class TransitionMatrix
 {
 public:
-	TransitionMatrix(MoleculeLookup & molLook) : molLookRef(molLook) {};
-	void Init(double boxVol, double temp);
+	TransitionMatrix(StaticVals const& stat, System & sys) : forcefield(stat.forcefield),
+    molLookRef(sys.molLookupRef), currentAxes(sys.boxDimRef) {};
+    
+	void Init(config_setup::Output out);
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
 	double CalculateBias(bool isDelMove);
 	void UpdateWeightingFunction();
 	void PrintTMProbabilityDistribution();
 
 private:
-	std::vector<double> PostProcessTransitionMatrix();
-
-	std::vector<double> transitionMatrixDel;		//Tracks sum of acceptance probabilities of deletion moves
-	std::vector<double> transitionMatrixEtc;		//Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
-	std::vector<double> transitionMatrixIns;		//Tracks sum of acceptance probabilities of insertion moves
-	std::vector<double> weightingFunction;			//Holds calculated biasing function
-	int vaporPeak, midpoint, liquidPeak;
-	uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 (works with single component systems only)
-	double boxVolume, temperature;
-	MoleculeLookup & molLookRef;			//Used to reference number of molecules of interest in the main box
+	const MoleculeLookup& molLookRef;			//Used to reference number of molecules of interest in the main box
+    const BoxDimensions& currentAxes;       //Used for volume
+    const Forcefield& forcefield;
 	bool biasingOn;							//Config flag, turns biasing on or off
+    ulong biasStep;                          //Biasing steps
+    double boxVolume, temperature;
+    int vaporPeak, midpoint, liquidPeak;
+    uint molKind;                            //Track what kind of molecule we're interested in; currently defaults to 0 (works with single component systems only)
+    std::vector<double> PostProcessTransitionMatrix();
+    std::vector<double> transitionMatrixDel;        //Tracks sum of acceptance probabilities of deletion moves
+    std::vector<double> transitionMatrixEtc;        //Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
+    std::vector<double> transitionMatrixIns;        //Tracks sum of acceptance probabilities of insertion moves
+    std::vector<double> weightingFunction;            //Holds calculated biasing function
+
 };
 
 
-inline void TransitionMatrix::Init(double boxVol, double temp) {
-	biasingOn = true;
+inline void TransitionMatrix::Init(config_setup::Output out) {
+	biasingOn = out.state.files.tmmc.enable;
+    biasStep = out.state.files.tmmc.step;
 	molKind = 0;
-	boxVolume = boxVol;
-	temperature = temp;
+    boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
+	temperature = forcefield.T_in_K;
 	transitionMatrixDel.push_back((double)0.0);
 	transitionMatrixEtc.push_back((double)0.0);
 	transitionMatrixIns.push_back((double)0.0);
