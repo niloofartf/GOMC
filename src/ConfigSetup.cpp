@@ -551,7 +551,7 @@ void ConfigSetup::Init(const char *fileName)
     } else if(line[0] == "TMMC") {
       out.state.files.tmmc.enable = checkBool(line[1]);
       if(out.state.files.tmmc.enable) {
-        printf("%-40s \n", "Info: TMMC active.");
+        printf("%-40s %-4s \n", "Info: TMMC", "Active");
       }
     } else if(line[0] == "BiasStep") {
       out.state.files.tmmc.step = stringtoi(line[1]);
