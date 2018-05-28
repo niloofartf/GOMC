@@ -45,7 +45,7 @@ public:
 	void Init(config_setup::TMMC const& tmmc);
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
 	double CalculateBias(bool isDelMove);
-	void UpdateWeightingFunction();
+	void UpdateWeightingFunction(ulong step);
 	void PrintTMProbabilityDistribution();
 
 private:
@@ -134,30 +134,29 @@ inline double TransitionMatrix::CalculateBias(bool isDelMove)
 }
 
 //Updates the bias vector using transition matrix data. Should be done around every 10^6 steps.
-inline void TransitionMatrix::UpdateWeightingFunction()
+inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 {
 	if (!biasingOn)
 		return;
-	weightingFunction[0] = 1.0;
 
-	double sumEntry, sumEntryPlusOne, probInsert, probDelete;
-	for (int i = 1; i<weightingFunction.size(); i++)
-	{
-		std::cout << i;
-		sumEntry = transitionMatrixDel[i - 1] + transitionMatrixEtc[i - 1] + transitionMatrixIns[i - 1];
-		sumEntryPlusOne = transitionMatrixDel[i] + transitionMatrixEtc[i] + transitionMatrixIns[i];
-		if ((sumEntry > 0.0) && (sumEntryPlusOne > 0.0) && (transitionMatrixIns[i - 1] > 0.0) && (transitionMatrixDel[i] > 0.0))
-		{
-			probInsert = transitionMatrixIns[i - 1] / sumEntry;
-			probDelete = transitionMatrixDel[i] / sumEntryPlusOne;
-		}
-		else
-		{
-			probInsert = 1.0;
-			probDelete = 1.0;
-		}
-		weightingFunction[i] = weightingFunction[i - 1] + log(probInsert / probDelete);
-	}
+  if((step + 1) % biasStep == biasStep) {
+	  weightingFunction[0] = 1.0;
+
+	  double sumEntry, sumEntryPlusOne, probInsert, probDelete;
+	  for (int i = 1; i<weightingFunction.size(); i++) {
+		  std::cout << i;
+		  sumEntry = transitionMatrixDel[i - 1] + transitionMatrixEtc[i - 1] + transitionMatrixIns[i - 1];
+		  sumEntryPlusOne = transitionMatrixDel[i] + transitionMatrixEtc[i] + transitionMatrixIns[i];
+		  if ((sumEntry > 0.0) && (sumEntryPlusOne > 0.0) && (transitionMatrixIns[i - 1] > 0.0) && (transitionMatrixDel[i] > 0.0)) {
+			  probInsert = transitionMatrixIns[i - 1] / sumEntry;
+			  probDelete = transitionMatrixDel[i] / sumEntryPlusOne;
+		  } else {
+			  probInsert = 1.0;
+			  probDelete = 1.0;
+		  }
+		  weightingFunction[i] = weightingFunction[i - 1] + log(probInsert / probDelete);
+	  }
+  }
 }
 
 inline void TransitionMatrix::PrintTMProbabilityDistribution()
