@@ -79,7 +79,7 @@ void Simulation::RunSimulation(void)
 	
   }
 #if ENSEMBLE == GCMC
-  system->transitionMatrixRef.PrintTMProbabilityDistribution();
+  system->transitionMatrix.PrintTMProbabilityDistribution();
   system->PrintTime();
 #endif
 }

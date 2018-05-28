@@ -18,8 +18,8 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 //	endif
 //Files currently affected: Movebase.h, MoleculeTransfer.h, IntraSwap.h
 
-#ifndef TRANSITIONMATRIX_H
-#define TRANSITIONMATRIX_H
+#pragma once
+
 #include "StaticVals.h"             //For init
 #include "Forcefield.h"
 #include "MoleculeLookup.h"
@@ -36,12 +36,12 @@ class TransitionMatrix
 {
 public:
 	TransitionMatrix(StaticVals const& stat, MoleculeLookup const& molLookupRef,
-                     BoxDimensions const& boxDimRef) : forcefield(stat.forcefield),
-    molLookRef(molLookupRef), currentAxes(boxDimRef)
-    {
-        biasingOn = false;
-    }
-    
+                   BoxDimensions const& boxDimRef) : forcefield(stat.forcefield),
+                   molLookRef(molLookupRef), currentAxes(boxDimRef)
+  {
+    biasingOn = false;
+  }
+
 	void Init(config_setup::TMMC const& tmmc);
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
 	double CalculateBias(bool isDelMove);
@@ -50,27 +50,26 @@ public:
 
 private:
 	const MoleculeLookup& molLookRef;		//Used to reference number of molecules of interest in the main box
-    const BoxDimensions& currentAxes;       //Used for volume
-    const Forcefield& forcefield;
+  const BoxDimensions& currentAxes;       //Used for volume
+  const Forcefield& forcefield;
 	bool biasingOn;							//Config flag, turns biasing on or off
-    ulong biasStep;                          //Biasing steps
-    double boxVolume, temperature;
-    int vaporPeak, midpoint, liquidPeak;
-    uint molKind;                            //Track what kind of molecule we're interested in; currently defaults to 0 (works with single component systems only)
-    std::vector<double> PostProcessTransitionMatrix();
-    std::vector<double> transitionMatrixDel;        //Tracks sum of acceptance probabilities of deletion moves
-    std::vector<double> transitionMatrixEtc;        //Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
-    std::vector<double> transitionMatrixIns;        //Tracks sum of acceptance probabilities of insertion moves
-    std::vector<double> weightingFunction;            //Holds calculated biasing function
-
+  ulong biasStep;                          //Biasing steps
+  double boxVolume, temperature;
+  int vaporPeak, midpoint, liquidPeak;
+  uint molKind;                            //Track what kind of molecule we're interested in; currently defaults to 0 (works with single component systems only)
+  std::vector<double> PostProcessTransitionMatrix();
+  std::vector<double> transitionMatrixDel;        //Tracks sum of acceptance probabilities of deletion moves
+  std::vector<double> transitionMatrixEtc;        //Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
+  std::vector<double> transitionMatrixIns;        //Tracks sum of acceptance probabilities of insertion moves
+  std::vector<double> weightingFunction;            //Holds calculated biasing function
 };
 
 
 inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	biasingOn = tmmc.enable;
-    biasStep = tmmc.step;
+  biasStep = tmmc.step;
 	molKind = 0;
-    boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
+  boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
 	transitionMatrixDel.push_back((double)0.0);
 	transitionMatrixEtc.push_back((double)0.0);
@@ -128,7 +127,6 @@ inline double TransitionMatrix::CalculateBias(bool isDelMove)
 	{
 		return weightingFunction[numMolecules] / weightingFunction[numMolecules + 1];
 	}
-
 	else 
 	{
 		return 1.0;
@@ -222,7 +220,6 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 	int infLoopPrevention = 0;
 	
 	do {
-
 		oldVaporPeak = vaporPeak;
 		oldMidpoint = midpoint;
 		oldLiquidPeak = liquidPeak;
@@ -287,6 +284,4 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 
 	return newWeightingFunction;
 }
-#endif
-
 #endif

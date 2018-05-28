@@ -4,8 +4,7 @@ Copyright (C) 2018  GOMC Group
 A copy of the GNU General Public License can be found in the COPYRIGHT.txt
 along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
-#ifndef CONFIGSETUP_H
-#define CONFIGSETUP_H
+#pragma once
 
 #include <map> //for function handle storage.
 #include <iostream> //for cerr, cout;
@@ -24,7 +23,6 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 
 #if ENSEMBLE == GCMC
 #include <sstream>  //for reading in variable # of chem. pot.
-#include "TransitionMatrix.h" //For toggling biasing on/off
 #endif
 
 namespace config_setup
@@ -321,5 +319,3 @@ private:
   static const char defaultConfigFileName[]; // "in.dat"
   static const char configFileAlias[];       // "GO-MC Configuration File"
 };
-
-#endif
