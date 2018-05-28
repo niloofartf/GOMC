@@ -114,6 +114,7 @@ set(headers
    src/StaticVals.h
    src/SubdividedArray.h
    src/System.h
+   src/TransitionMatrix.h
    src/TransformMatrix.h
    src/Writer.h
    src/XYZArray.h

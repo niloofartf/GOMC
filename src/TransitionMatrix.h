@@ -20,38 +20,36 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 
 #ifndef TRANSITIONMATRIX_H
 #define TRANSITIONMATRIX_H
-#include "EnsemblePreprocessor.h"
-#include "System.h"                 //For init
 #include "StaticVals.h"             //For init
 #include "Forcefield.h"
 #include "MoleculeLookup.h"
 #include "BoxDimensions.h"
 #include "BoxDimensionsNonOrth.h"
+#include "ConfigSetup.h"
 #include <vector>
 #include <cmath>
 #include <iostream>
 
-class System;
-class StaticVals;
-class Forcefield;
-class MoleculeLookup;
-class MoleculeKind;
-class BoxDimensions;
+#if ENSEMBLE == GCMC
 
 class TransitionMatrix
 {
 public:
-	TransitionMatrix(StaticVals const& stat, System & sys) : forcefield(stat.forcefield),
-    molLookRef(sys.molLookupRef), currentAxes(sys.boxDimRef) {};
+	TransitionMatrix(StaticVals const& stat, MoleculeLookup const& molLookupRef,
+                     BoxDimensions const& boxDimRef) : forcefield(stat.forcefield),
+    molLookRef(molLookupRef), currentAxes(boxDimRef)
+    {
+        biasingOn = false;
+    }
     
-	void Init(config_setup::Output out);
+	void Init(config_setup::TMMC const& tmmc);
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
 	double CalculateBias(bool isDelMove);
 	void UpdateWeightingFunction();
 	void PrintTMProbabilityDistribution();
 
 private:
-	const MoleculeLookup& molLookRef;			//Used to reference number of molecules of interest in the main box
+	const MoleculeLookup& molLookRef;		//Used to reference number of molecules of interest in the main box
     const BoxDimensions& currentAxes;       //Used for volume
     const Forcefield& forcefield;
 	bool biasingOn;							//Config flag, turns biasing on or off
@@ -68,9 +66,9 @@ private:
 };
 
 
-inline void TransitionMatrix::Init(config_setup::Output out) {
-	biasingOn = out.state.files.tmmc.enable;
-    biasStep = out.state.files.tmmc.step;
+inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
+	biasingOn = tmmc.enable;
+    biasStep = tmmc.step;
 	molKind = 0;
     boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
@@ -289,4 +287,6 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 
 	return newWeightingFunction;
 }
+#endif
+
 #endif

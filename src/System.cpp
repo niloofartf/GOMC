@@ -40,8 +40,10 @@ System::System(StaticVals& statics) :
   com(boxDimRef, coordinates, molLookupRef, statics.mol),
   moveSettings(boxDimRef), 
   cellList(statics.mol, boxDimRef),
-  calcEnergy(statics, *this),
-  transitionMatrix(statics, *this)
+  calcEnergy(statics, *this)
+#if ENSEMBLE == GCMC
+  , transitionMatrix(statics, molLookupRef, boxDimRef)
+#endif
 {
   calcEwald = NULL;
 }
@@ -78,7 +80,9 @@ void System::Init(Setup const& set)
 #ifdef VARIABLE_PARTICLE_NUMBER
   molLookup.Init(statV.mol, set.pdb.atoms);
 #endif
-  transitionMatrix.Init(set.out);
+#if ENSEMBLE == GCMC
+  transitionMatrix.Init(set.config.out.state.files.tmmc);
+#endif
   moveSettings.Init(statV, set.pdb.remarks);
   //Note... the following calls use box iterators, so must come after
   //the molecule lookup initialization, in case we're in a constant

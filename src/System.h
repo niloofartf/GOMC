@@ -83,7 +83,9 @@ public:
   //Use as we don't know where they are...
   BoxDimensions & boxDimRef;
   MoleculeLookup & molLookupRef;
+#if ENSEMBLE == GCMC
   TransitionMatrix transitionMatrix;
+#endif
 
   MoveSettings moveSettings;
   SystemPotential potential;

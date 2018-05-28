@@ -43,7 +43,10 @@ public:
     calcEnRef(sys.calcEnergy), comCurrRef(sys.com),
     coordCurrRef(sys.coordinates), prng(sys.prng), molRef(statV.mol),
     BETA(statV.forcefield.beta), ewald(statV.forcefield.ewald),
-    cellList(sys.cellList), molRemoved(false), transitionMatrixRef(sys.transitionMatrixRef)
+    cellList(sys.cellList), molRemoved(false)
+#if ENSEMBLE == GCMC
+    , transitionMatrixRef(sys.transitionMatrix)
+#endif
   {
     calcEwald = sys.GetEwald();
 #if ENSEMBLE == GEMC || ENSEMBLE == NPT
@@ -77,6 +80,9 @@ protected:
   COM & comCurrRef;
   CalculateEnergy & calcEnRef;
   Ewald * calcEwald;
+#if ENSEMBLE == GCMC
+    TransitionMatrix & transitionMatrixRef;
+#endif
 
   PRNG & prng;
   BoxDimensions & boxDimRef;
@@ -85,7 +91,6 @@ protected:
   const bool ewald;
   CellList& cellList;
   bool molRemoved, fixBox0;
-  TransitionMatrix & transitionMatrixRef;
 };
 
 //Data needed for transforming a molecule's position via inter or intrabox

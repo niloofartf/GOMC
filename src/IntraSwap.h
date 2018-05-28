@@ -19,7 +19,7 @@ public:
 
   IntraSwap(System &sys, StaticVals const& statV) :
     ffRef(statV.forcefield), molLookRef(sys.molLookupRef),
-    MoveBase(sys, statV), transitionMatrixRef(sys.transitionMatrixRef) {}
+    MoveBase(sys, statV) {}
 
   virtual uint Prep(const double subDraw, const double movPerc);
   virtual uint Transform();
@@ -38,7 +38,6 @@ private:
   Intermolecular tcLose, tcGain, recipDiff;
   MoleculeLookup & molLookRef;
   Forcefield const& ffRef;
-  TransitionMatrix & transitionMatrixRef;
 };
 
 inline uint IntraSwap::GetBoxAndMol
