@@ -4,7 +4,6 @@ Copyright (C) 2018  GOMC Group
 A copy of the GNU General Public License can be found in the COPYRIGHT.txt
 along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
-//TODO: Add TM flag to ConfigSetup.cpp to set biasingOn to true/false, set reweighting by config (hardcoded in simulation.cpp)
 //TODO: print weightingFunction to file instead of console/Format console print (see manual, pg 38)
 //TODO: find a way to set molKind to the correct kind of molecule (currently only good for single comp liquid/gas interface, no adsorbance)
 //TODO: Output information (densities, vapor pressure) in correct units
@@ -59,8 +58,7 @@ private:
   
   uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 
 										//(Current implementation works with single component systems only)
-										//If user can select a component to track, adsorption/absorption sims become possible, but
-										//the back-end additions required are currently out of scope; leaving this here for the future.
+										//If user can select a component to track, adsorption/absorption sims become possible
 
   std::vector<double> PostProcessTransitionMatrix();
   std::vector<double> transitionMatrixDel;        //Tracks sum of acceptance probabilities of deletion moves
