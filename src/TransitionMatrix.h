@@ -49,19 +49,24 @@ public:
 	void PrintTMProbabilityDistribution();
 
 private:
-	const MoleculeLookup& molLookRef;		//Used to reference number of molecules of interest in the main box
-  const BoxDimensions& currentAxes;       //Used for volume
-  const Forcefield& forcefield;
-	bool biasingOn;							//Config flag, turns biasing on or off
-  ulong biasStep;                          //Biasing steps
+	const MoleculeLookup& molLookRef;	//Used to reference number of molecules of interest in the main box
+  const BoxDimensions& currentAxes;     //Used for volume
+  const Forcefield& forcefield;			//Used for temperature
+	bool biasingOn;						//Config flag, turns biasing on or off
+  ulong biasStep;                       //Biasing steps
   double boxVolume, temperature;
   int vaporPeak, midpoint, liquidPeak;
-  uint molKind;                            //Track what kind of molecule we're interested in; currently defaults to 0 (works with single component systems only)
+  
+  uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 
+										//(Current implementation works with single component systems only)
+										//If user can select a component to track, adsorption/absorption sims become possible, but
+										//the back-end additions required are currently out of scope; leaving this here for the future.
+
   std::vector<double> PostProcessTransitionMatrix();
   std::vector<double> transitionMatrixDel;        //Tracks sum of acceptance probabilities of deletion moves
   std::vector<double> transitionMatrixEtc;        //Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
   std::vector<double> transitionMatrixIns;        //Tracks sum of acceptance probabilities of insertion moves
-  std::vector<double> weightingFunction;            //Holds calculated biasing function
+  std::vector<double> weightingFunction;          //Holds calculated biasing function
 };
 
 
