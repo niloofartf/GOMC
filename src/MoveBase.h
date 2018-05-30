@@ -186,7 +186,7 @@ inline void Translate::Accept(const uint rejectState, const uint step)
   bool res = false;
   //Transition Matrix GCMC acceptance data collection step
 #if ENSEMBLE == GCMC
-  transitionMatrixRef.AddAcceptanceProbToMatrix(1.0, 0);
+  transitionMatrixRef.IncrementAcceptanceProbability(0);
 #endif
   if (rejectState == mv::fail_state::NO_FAIL) {
     double pr = prng();
@@ -275,7 +275,7 @@ inline void Rotate::Accept(const uint rejectState, const uint step)
 {
 	//Transition Matrix GCMC acceptance data collection step
 #if ENSEMBLE == GCMC
-	transitionMatrixRef.AddAcceptanceProbToMatrix(1.0, 0);
+	transitionMatrixRef.IncrementAcceptanceProbability(0);
 #endif
   bool res = false;
 

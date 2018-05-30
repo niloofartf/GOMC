@@ -107,7 +107,7 @@ inline void IntraSwap::Accept(const uint rejectState, const uint step)
   bool result;
   //Transition Matrix GCMC acceptance data collection step
 #if ENSEMBLE == GCMC
-  transitionMatrixRef.AddAcceptanceProbToMatrix(1.0, 0);
+  transitionMatrixRef.IncrementAcceptanceProbability(0);
 #endif
   //If we didn't skip the move calculation
   if(rejectState == mv::fail_state::NO_FAIL) {

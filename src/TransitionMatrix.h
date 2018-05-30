@@ -15,7 +15,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 //	if ENSEMBLE == GCMC
 //		transitionMatrixRef.addAcceptanceProbToMatrix(0.0, 0);
 //	endif
-//Files currently affected: Movebase.h, MoleculeTransfer.h, IntraSwap.h
+//Files currently affected: Movebase.h, MoleculeTransfer.h, IntraSwap.h, Regrowth.h
 
 #pragma once
 
@@ -28,6 +28,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 #if ENSEMBLE == GCMC
 
@@ -43,6 +44,7 @@ public:
 
 	void Init(config_setup::TMMC const& tmmc);
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
+	void IncrementAcceptanceProbability(int molKind);
 	double CalculateBias(bool isDelMove);
 	void UpdateWeightingFunction(ulong step);
 	void PrintTMProbabilityDistribution();
@@ -61,6 +63,10 @@ private:
 										//If user can select a component to track, adsorption/absorption sims become possible
 
   std::vector<double> PostProcessTransitionMatrix();
+
+  std::vector<double> transitionMatrix;						  //Holds 3D Transition Matrix array after initialization
+  const int maxMolecNum;
+
   std::vector<double> transitionMatrixDel;        //Tracks sum of acceptance probabilities of deletion moves
   std::vector<double> transitionMatrixEtc;        //Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
   std::vector<double> transitionMatrixIns;        //Tracks sum of acceptance probabilities of insertion moves
@@ -74,6 +80,17 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	molKind = 0;
   boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
+
+	//1st dimension: # of molecules that can swap boxes
+	//2nd dimension: Remove molecule acceptance, Const molecule number acceptance, Add molecule acceptance, calculated weighting function
+	//3rd dimention: totMolec
+	int totMolec = 0;
+	for (int i = 0; i < molLookRef.GetNumCanSwapKind(); i++) {
+		totMolec += molLookRef.NumKindInBox(i, mv::BOX0) + molLookRef.NumKindInBox(i, mv::BOX1);
+	}
+	//1: del/etc/ins/wf, del/etc/ins/wf, ... 2: del/etc/ins/wf, del/etc/ins/wf...
+	transitionMatrix.resize(molLookRef.GetNumCanSwapKind() * 4 * totMolec);
+
 	transitionMatrixDel.push_back((double)0.0);
 	transitionMatrixEtc.push_back((double)0.0);
 	transitionMatrixIns.push_back((double)0.0);
@@ -87,6 +104,8 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 	if (!biasingOn)
 		return;
 	uint numMolecules = molLookRef.NumKindInBox(molKind, 0);
+	
+	//TODO: replace this with static arrays
 	while (numMolecules >= transitionMatrixDel.size()) {
 		transitionMatrixDel.push_back((double)0.0);
 		transitionMatrixEtc.push_back((double)0.0);
@@ -108,9 +127,11 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 		transitionMatrixIns[numMolecules] = transitionMatrixIns[numMolecules] + acceptanceProbability;
 		transitionMatrixEtc[numMolecules] = transitionMatrixEtc[numMolecules] + 1.0 - acceptanceProbability;
 	}
-	else {
-		transitionMatrixEtc[numMolecules] = transitionMatrixEtc[numMolecules] + 1.0;
-	}
+}
+
+inline void TransitionMatrix::IncrementAcceptanceProbability(int molKind)
+{
+	transitionMatrixEtc[molLookRef.NumKindInBox(molKind, 0)] += 1.0;
 }
 
 //Calculates the bias to be applied to GCMC insertion/deletion moves from the transition transitionMatrix.
