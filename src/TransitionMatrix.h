@@ -38,7 +38,7 @@ public:
 	TransitionMatrix(StaticVals const& stat, MoleculeLookup const& molLookupRef,
                    BoxDimensions const& boxDimRef) : forcefield(stat.forcefield),
                    molLookRef(molLookupRef), currentAxes(boxDimRef)
-  {
+	{
     biasingOn = false;
   }
 
@@ -63,13 +63,15 @@ private:
 										//If user can select a component to track, adsorption/absorption sims become possible
 
   std::vector<double> PostProcessTransitionMatrix();
+  int GetTMDelIndex(int numMolec);
+  int GetTMEtcIndex(int numMolec);
+  int GetTMInsIndex(int numMolec);
 
-  std::vector<double> transitionMatrix;						  //Holds 3D Transition Matrix array after initialization
-  const int maxMolecNum;
+  std::vector<double> transitionMatrix;			  //Holds flat 2D Transition Matrix array after initialization
 
-  std::vector<double> transitionMatrixDel;        //Tracks sum of acceptance probabilities of deletion moves
-  std::vector<double> transitionMatrixEtc;        //Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
-  std::vector<double> transitionMatrixIns;        //Tracks sum of acceptance probabilities of insertion moves
+  //std::vector<double> transitionMatrixDel;        //Tracks sum of acceptance probabilities of deletion moves
+  //std::vector<double> transitionMatrixEtc;        //Tracks sum of 1-acceptance probabilities of insert/delete, all attempts of all other moves
+  //std::vector<double> transitionMatrixIns;        //Tracks sum of acceptance probabilities of insertion moves
   std::vector<double> weightingFunction;          //Holds calculated biasing function
 };
 
@@ -81,21 +83,26 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
   boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
 
-	//1st dimension: # of molecules that can swap boxes
-	//2nd dimension: Remove molecule acceptance, Const molecule number acceptance, Add molecule acceptance, calculated weighting function
-	//3rd dimention: totMolec
-	int totMolec = 0;
-	for (int i = 0; i < molLookRef.GetNumCanSwapKind(); i++) {
-		totMolec += molLookRef.NumKindInBox(i, mv::BOX0) + molLookRef.NumKindInBox(i, mv::BOX1);
-	}
-	//1: del/etc/ins/wf, del/etc/ins/wf, ... 2: del/etc/ins/wf, del/etc/ins/wf...
-	transitionMatrix.resize(molLookRef.GetNumCanSwapKind() * 4 * totMolec);
 
-	transitionMatrixDel.push_back((double)0.0);
-	transitionMatrixEtc.push_back((double)0.0);
-	transitionMatrixIns.push_back((double)0.0);
+	//1st dimension: Remove molecule acceptance, Const molecule number acceptance, Add molecule acceptance
+	//2nd dimention: totMolec
+	int totMolec = molLookRef.NumKindInBox(0, mv::BOX0) + molLookRef.NumKindInBox(0, mv::BOX1);
+	//del/etc/ins, del/etc/ins, ... 
+	transitionMatrix.resize(3 * totMolec);
+	for (int i = 0; i < transitionMatrix.size(); i++) { transitionMatrix[i] = 0.0; }
+
+	weightingFunction.resize(totMolec);
+	for (int i = 0; i < weightingFunction.size(); i++) { weightingFunction[i] = 1.0; }
+
+	//transitionMatrixDel.push_back((double)0.0);
+	//transitionMatrixEtc.push_back((double)0.0);
+	//transitionMatrixIns.push_back((double)0.0);
 	weightingFunction.push_back((double)1.0);
 }
+
+inline int TransitionMatrix::GetTMDelIndex(int numMolec) { return numMolec * 3; }
+inline int TransitionMatrix::GetTMEtcIndex(int numMolec) { return numMolec * 3 + 1; }
+inline int TransitionMatrix::GetTMInsIndex(int numMolec) { return numMolec * 3 + 2; }
 
 //Adds acceptance probability from GCMC particle insertion and deletion moves to the transition transitionMatrix
 //vector, growing the vector if required.
@@ -106,12 +113,12 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 	uint numMolecules = molLookRef.NumKindInBox(molKind, 0);
 	
 	//TODO: replace this with static arrays
-	while (numMolecules >= transitionMatrixDel.size()) {
-		transitionMatrixDel.push_back((double)0.0);
-		transitionMatrixEtc.push_back((double)0.0);
-		transitionMatrixIns.push_back((double)0.0);
-		weightingFunction.push_back(weightingFunction[weightingFunction.size() - 1]);
-	}
+	//while (numMolecules >= transitionMatrixDel.size()) {
+	//	transitionMatrixDel.push_back((double)0.0);
+	//	transitionMatrixEtc.push_back((double)0.0);
+	//	transitionMatrixIns.push_back((double)0.0);
+	//	weightingFunction.push_back(weightingFunction[weightingFunction.size() - 1]);
+	//}
 
 	if (acceptanceProbability > 1.0)
 		acceptanceProbability = 1.0;
@@ -119,19 +126,19 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 	//move == 1: deletion move; move == 2: insertion move; move == anything else: move will keep numMolecules constant
 	if (move == 1)
 	{
-		transitionMatrixDel[numMolecules] = transitionMatrixDel[numMolecules] + acceptanceProbability;
-		transitionMatrixEtc[numMolecules] = transitionMatrixEtc[numMolecules] + 1.0 - acceptanceProbability;
+		transitionMatrix[GetTMDelIndex(numMolecules)] += acceptanceProbability;
+		transitionMatrix[GetTMEtcIndex(numMolecules)] += 1.0 - acceptanceProbability;
 	}
 	else if (move == 2)
 	{
-		transitionMatrixIns[numMolecules] = transitionMatrixIns[numMolecules] + acceptanceProbability;
-		transitionMatrixEtc[numMolecules] = transitionMatrixEtc[numMolecules] + 1.0 - acceptanceProbability;
+		transitionMatrix[GetTMInsIndex(numMolecules)] += acceptanceProbability;
+		transitionMatrix[GetTMEtcIndex(numMolecules)] += 1.0 - acceptanceProbability;
 	}
 }
 
 inline void TransitionMatrix::IncrementAcceptanceProbability(int molKind)
 {
-	transitionMatrixEtc[molLookRef.NumKindInBox(molKind, 0)] += 1.0;
+	transitionMatrix[GetTMEtcIndex(molLookRef.NumKindInBox(molKind, 0))] += 1.0;
 }
 
 //Calculates the bias to be applied to GCMC insertion/deletion moves from the transition transitionMatrix.
@@ -163,17 +170,17 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 	if (!biasingOn)
 		return;
 
-  if((step + 1) % biasStep == biasStep) {
+  if((step + 1) % biasStep == 0) {
 	  weightingFunction[0] = 1.0;
 
 	  double sumEntry, sumEntryPlusOne, probInsert, probDelete;
 	  for (int i = 1; i<weightingFunction.size(); i++) {
 		  std::cout << i;
-		  sumEntry = transitionMatrixDel[i - 1] + transitionMatrixEtc[i - 1] + transitionMatrixIns[i - 1];
-		  sumEntryPlusOne = transitionMatrixDel[i] + transitionMatrixEtc[i] + transitionMatrixIns[i];
-		  if ((sumEntry > 0.0) && (sumEntryPlusOne > 0.0) && (transitionMatrixIns[i - 1] > 0.0) && (transitionMatrixDel[i] > 0.0)) {
-			  probInsert = transitionMatrixIns[i - 1] / sumEntry;
-			  probDelete = transitionMatrixDel[i] / sumEntryPlusOne;
+		  sumEntry = transitionMatrix[GetTMDelIndex(i - 1)] + transitionMatrix[GetTMEtcIndex(i - 1)] + transitionMatrix[GetTMInsIndex(i - 1)];
+		  sumEntryPlusOne = transitionMatrix[GetTMDelIndex(i)] + transitionMatrix[GetTMEtcIndex(i)] + transitionMatrix[GetTMInsIndex(i)];
+		  if ((sumEntry > 0.0) && (sumEntryPlusOne > 0.0) && (transitionMatrix[GetTMInsIndex(i - 1)] > 0.0) && (transitionMatrix[GetTMDelIndex(i)] > 0.0)) {
+			  probInsert = transitionMatrix[GetTMInsIndex(i - 1)] / sumEntry;
+			  probDelete = transitionMatrix[GetTMDelIndex(i)] / sumEntryPlusOne;
 		  } else {
 			  probInsert = 1.0;
 			  probDelete = 1.0;
@@ -187,6 +194,9 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 {
 	if (!biasingOn)  
 		return; 
+
+	UpdateWeightingFunction(biasStep - 1);
+
 	std::cout << "\nTM Particle Number Probability Distribution:\n";
 	for (int i = 0; i < weightingFunction.size()-1; i++) {
 		std::cout << weightingFunction[i] << ",";
@@ -216,10 +226,10 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 {
-	std::vector<double> newWeightingFunction;
-	for (int i = 0; i < weightingFunction.size(); i++) {
-		newWeightingFunction.push_back(0.0);
-	}
+	std::vector<double> newWeightingFunction(weightingFunction.size());
+	//for (int i = 0; i < weightingFunction.size(); i++) {
+	//	newWeightingFunction.push_back(0.0);
+	//}
 	int maxMolecules = newWeightingFunction.size() - 1;
 	midpoint = maxMolecules / 2;
 
