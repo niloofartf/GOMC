@@ -198,7 +198,9 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	}
 	std::cout << weightingFunction[weightingFunction.size() - 1];
 	
+
 	weightingFunction = PostProcessTransitionMatrix();
+	
 	
 	std::cout << "\nEquilibrium Particle Number Probability Distribution:" << "\n";
 	for (int i = 0; i < weightingFunction.size()-1; i++) {
@@ -206,8 +208,7 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	}
 	std::cout << weightingFunction[weightingFunction.size() - 1] << "\n";
 	
-	//Calc/print vapor/liquid densities here (peaks/volume?)
-
+	//Calc/print vapor/liquid densities, vapor pressure, surface tension
 	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
 	double vaporDensity = InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
 	double liquidDensity = InvAvogadrosNumTimesTenToTheThirtieth * liquidPeak / boxVolume;
@@ -222,8 +223,9 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	double vaporPressure = (log(sumFunction) - log(weightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
 	std::cout << "Vapor pressure: " << vaporPressure << " (Pa)\n";
 
-	double surfaceTension = (0.5 * (weightingFunction[liquidPeak] + weightingFunction[vaporPeak]) - weightingFunction[midpoint]) / (2 * pow(boxVolume, 2.0 / 3.0));
-	std::cout << "Surface Tension: " << surfaceTension << " (Ang^2), " << "Surface Tension: " << surfaceTension * pow(10, 20) << " (m^2)\n";
+	double KBTimesTenToTheTwentieth = 0.00138064852;
+	double surfaceTension = (0.5 * (weightingFunction[liquidPeak] + weightingFunction[vaporPeak]) - weightingFunction[midpoint]) * temperature * KBTimesTenToTheTwentieth / (2 * pow(boxVolume, 2.0 / 3.0));
+	std::cout << "Box Length (assumes cubic box): " << pow(boxVolume,1/3.0) << " (ang); Surface Tension: " << surfaceTension << " (N/m)\n";
 }
 
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
