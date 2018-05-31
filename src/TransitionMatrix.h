@@ -6,7 +6,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
 //TODO: print weightingFunction to file instead of console/Format console print (see manual, pg 38)
 //TODO: find a way to set molKind to the correct kind of molecule (currently only good for single comp liquid/gas interface, no adsorbance)
-//TODO: Output information (densities, vapor pressure) in correct units
+//TODO: Check surface tension units
 
 //Note: When adding new moves to GOMC, if they might run in a GCMC simulation, the transition matrix 
 //must be updated with the acceptance probability. If the move will not end in the number of particles in the 
@@ -79,14 +79,11 @@ private:
 inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	biasingOn = tmmc.enable;
   biasStep = tmmc.step;
-	molKind = 0;
+	molKind = 0;								//TODO: make input from MoleculeLookup 
   boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
 
-
-	//1st dimension: Remove molecule acceptance, Const molecule number acceptance, Add molecule acceptance
-	//2nd dimention: totMolec
-	int totMolec = molLookRef.NumKindInBox(0, mv::BOX0) + molLookRef.NumKindInBox(0, mv::BOX1);
+	int totMolec = molLookRef.NumKindInBox(molKind, mv::BOX0) + molLookRef.NumKindInBox(molKind, mv::BOX1);
 	//del/etc/ins, del/etc/ins, ... 
 	transitionMatrix.resize(3 * totMolec);
 	for (int i = 0; i < transitionMatrix.size(); i++) { transitionMatrix[i] = 0.0; }
@@ -110,9 +107,8 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 {
 	if (!biasingOn)
 		return;
-	uint numMolecules = molLookRef.NumKindInBox(molKind, 0);
+	uint numMolecules = molLookRef.NumKindInBox(molKind, mv::BOX0);
 	
-	//TODO: replace this with static arrays
 	//while (numMolecules >= transitionMatrixDel.size()) {
 	//	transitionMatrixDel.push_back((double)0.0);
 	//	transitionMatrixEtc.push_back((double)0.0);
@@ -138,7 +134,7 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 
 inline void TransitionMatrix::IncrementAcceptanceProbability(int molKind)
 {
-	transitionMatrix[GetTMEtcIndex(molLookRef.NumKindInBox(molKind, 0))] += 1.0;
+	transitionMatrix[GetTMEtcIndex(molLookRef.NumKindInBox(molKind, mv::BOX0))] += 1.0;
 }
 
 //Calculates the bias to be applied to GCMC insertion/deletion moves from the transition transitionMatrix.
@@ -149,7 +145,7 @@ inline double TransitionMatrix::CalculateBias(bool isDelMove)
 	if (!biasingOn)
 		return 1.0;
 
-	uint numMolecules = molLookRef.NumKindInBox(molKind, 0);
+	uint numMolecules = molLookRef.NumKindInBox(molKind, mv::BOX0);
 	if (isDelMove && numMolecules != 0)
 	{
 		return weightingFunction[numMolecules - 1] / weightingFunction[numMolecules];
@@ -175,7 +171,6 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 
 	  double sumEntry, sumEntryPlusOne, probInsert, probDelete;
 	  for (int i = 1; i<weightingFunction.size(); i++) {
-		  std::cout << i;
 		  sumEntry = transitionMatrix[GetTMDelIndex(i - 1)] + transitionMatrix[GetTMEtcIndex(i - 1)] + transitionMatrix[GetTMInsIndex(i - 1)];
 		  sumEntryPlusOne = transitionMatrix[GetTMDelIndex(i)] + transitionMatrix[GetTMEtcIndex(i)] + transitionMatrix[GetTMInsIndex(i)];
 		  if ((sumEntry > 0.0) && (sumEntryPlusOne > 0.0) && (transitionMatrix[GetTMInsIndex(i - 1)] > 0.0) && (transitionMatrix[GetTMDelIndex(i)] > 0.0)) {
@@ -212,7 +207,11 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	std::cout << weightingFunction[weightingFunction.size() - 1] << "\n";
 	
 	//Calc/print vapor/liquid densities here (peaks/volume?)
-	std::cout << "Box volume: " << boxVolume << "Vapor peak: " << vaporPeak << " Liquid peak: " << liquidPeak << "\n";
+
+	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
+	double vaporDensity = InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
+	double liquidDensity = InvAvogadrosNumTimesTenToTheThirtieth * liquidPeak / boxVolume;
+	std::cout << "Vapor density: " << vaporDensity << " (mol/m3); Liquid peak: " << liquidPeak << " (mol/m3)\n";
 
 	double sumFunction = 0.0;
 	for (int i = 0; i < weightingFunction.size(); i++) {
@@ -221,7 +220,10 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 
 	double KBTimesTenToTheThirtieth = 13806485.2;			//Boltzmann constant times 10^30 (box volume from cubic angstroms to cubic meters)
 	double vaporPressure = (log(sumFunction) - log(weightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
-	std::cout << "Vapor pressure: " << vaporPressure << "\n";
+	std::cout << "Vapor pressure: " << vaporPressure << " (Pa)\n";
+
+	double surfaceTension = (0.5 * (weightingFunction[liquidPeak] + weightingFunction[vaporPeak]) - weightingFunction[midpoint]) / (2 * pow(boxVolume, 2.0 / 3.0));
+	std::cout << "Surface Tension: " << surfaceTension << " (Ang^2), " << "Surface Tension: " << surfaceTension * pow(10, 20) << " (m^2)\n";
 }
 
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
@@ -230,7 +232,15 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 	//for (int i = 0; i < weightingFunction.size(); i++) {
 	//	newWeightingFunction.push_back(0.0);
 	//}
-	int maxMolecules = newWeightingFunction.size() - 1;
+
+	int maximumMoleculesSampled = weightingFunction.size() - 1;
+	int i = weightingFunction.size() - 2;
+	while (weightingFunction[i] == maximumMoleculesSampled) {
+		maximumMoleculesSampled = weightingFunction[i];
+		i--;
+	}
+
+	int maxMolecules = maximumMoleculesSampled - 1;
 	midpoint = maxMolecules / 2;
 
 	double leftArea = 0.0;
@@ -260,7 +270,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		//Weight macrostate probability function so integral of vapor region == integral of liquid region
 		while (areaDif > 0.0001) {
 			oldAreaDif = areaDif;
-			for (int i = 0; i < weightingFunction.size(); i++) {
+			for (int i = 0; i < maximumMoleculesSampled; i++) {
 				newWeightingFunction[i] = weightingFunction[i] + dChemPot*i;
 			}
 
@@ -306,14 +316,14 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 
 		//Determine new cutoff for max molecules (see: Errington 2003)
 		maxMolecules = liquidPeak;
-		for (int i = liquidPeak; i < newWeightingFunction.size(); i++){
+		for (int i = liquidPeak; i < maximumMoleculesSampled; i++){
 			if (newWeightingFunction[liquidPeak] - newWeightingFunction[maxMolecules] <= 10.0)
 				maxMolecules++;
 		}
 		std::cout << "";
 		infLoopPrevention += 1;
 		//Repeatedly solve until peaks and midpoint stabilize; infLoopPrevention prevents oscillation around a point
-	} while ((vaporPeak != oldVaporPeak || midpoint != oldMidpoint || liquidPeak != oldLiquidPeak) && infLoopPrevention<100);
+	} while ((vaporPeak != oldVaporPeak || midpoint != oldMidpoint || liquidPeak != oldLiquidPeak) && infLoopPrevention<1000);
 
 	return newWeightingFunction;
 }
