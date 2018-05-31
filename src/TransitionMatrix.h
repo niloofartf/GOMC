@@ -45,7 +45,7 @@ public:
 	void Init(config_setup::TMMC const& tmmc);
 	void AddAcceptanceProbToMatrix(double acceptanceProbability, int move);
 	void IncrementAcceptanceProbability(int molKind);
-	double CalculateBias(bool isDelMove);
+	double CalculateBias(int move);
 	void UpdateWeightingFunction(ulong step);
 	void PrintTMProbabilityDistribution();
 
@@ -55,7 +55,7 @@ private:
   const Forcefield& forcefield;			//Used for temperature
 	bool biasingOn;						//Config flag, turns biasing on or off
   ulong biasStep;                       //Biasing steps
-  double boxVolume, temperature;
+  double boxVolume, temperature, vaporPressure, surfaceTension, vaporDensity, liquidDensity;
   int vaporPeak, midpoint, liquidPeak;
   
   uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 
@@ -78,9 +78,9 @@ private:
 
 inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	biasingOn = tmmc.enable;
-  biasStep = tmmc.step;
+	biasStep = tmmc.step;
 	molKind = 0;								//TODO: make input from MoleculeLookup 
-  boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
+	boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
 
 	int totMolec = molLookRef.NumKindInBox(molKind, mv::BOX0) + molLookRef.NumKindInBox(molKind, mv::BOX1);
@@ -90,42 +90,28 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 
 	weightingFunction.resize(totMolec);
 	for (int i = 0; i < weightingFunction.size(); i++) { weightingFunction[i] = 1.0; }
-
-	//transitionMatrixDel.push_back((double)0.0);
-	//transitionMatrixEtc.push_back((double)0.0);
-	//transitionMatrixIns.push_back((double)0.0);
-	weightingFunction.push_back((double)1.0);
 }
 
 inline int TransitionMatrix::GetTMDelIndex(int numMolec) { return numMolec * 3; }
 inline int TransitionMatrix::GetTMEtcIndex(int numMolec) { return numMolec * 3 + 1; }
 inline int TransitionMatrix::GetTMInsIndex(int numMolec) { return numMolec * 3 + 2; }
 
-//Adds acceptance probability from GCMC particle insertion and deletion moves to the transition transitionMatrix
-//vector, growing the vector if required.
+//Adds acceptance probability from GCMC particle insertion and deletion moves to the transitionMatrix vector
 inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbability, int move)
 {
 	if (!biasingOn)
 		return;
 	uint numMolecules = molLookRef.NumKindInBox(molKind, mv::BOX0);
-	
-	//while (numMolecules >= transitionMatrixDel.size()) {
-	//	transitionMatrixDel.push_back((double)0.0);
-	//	transitionMatrixEtc.push_back((double)0.0);
-	//	transitionMatrixIns.push_back((double)0.0);
-	//	weightingFunction.push_back(weightingFunction[weightingFunction.size() - 1]);
-	//}
-
 	if (acceptanceProbability > 1.0)
 		acceptanceProbability = 1.0;
 
-	//move == 1: deletion move; move == 2: insertion move; move == anything else: move will keep numMolecules constant
-	if (move == 1)
+	//move == 0: deletion move; move == 1: insertion move
+	if (move == 0)
 	{
 		transitionMatrix[GetTMDelIndex(numMolecules)] += acceptanceProbability;
 		transitionMatrix[GetTMEtcIndex(numMolecules)] += 1.0 - acceptanceProbability;
 	}
-	else if (move == 2)
+	else if (move == 1)
 	{
 		transitionMatrix[GetTMInsIndex(numMolecules)] += acceptanceProbability;
 		transitionMatrix[GetTMEtcIndex(numMolecules)] += 1.0 - acceptanceProbability;
@@ -139,18 +125,18 @@ inline void TransitionMatrix::IncrementAcceptanceProbability(int molKind)
 
 //Calculates the bias to be applied to GCMC insertion/deletion moves from the transition transitionMatrix.
 //Note: Must calculate bias /after/ adding acceptance probabilities
-inline double TransitionMatrix::CalculateBias(bool isDelMove)
+inline double TransitionMatrix::CalculateBias(int move)
 {
 	//If not running a transition matrix run, don't apply biasing to move acceptance chance
 	if (!biasingOn)
 		return 1.0;
 
 	uint numMolecules = molLookRef.NumKindInBox(molKind, mv::BOX0);
-	if (isDelMove && numMolecules != 0)
+	if (move == 0 && numMolecules != 0)
 	{
 		return weightingFunction[numMolecules - 1] / weightingFunction[numMolecules];
 	}
-	else if (numMolecules != weightingFunction.size()-1)
+	else if (move == 1 && numMolecules != weightingFunction.size()-1)
 	{
 		return weightingFunction[numMolecules] / weightingFunction[numMolecules + 1];
 	}
@@ -160,7 +146,7 @@ inline double TransitionMatrix::CalculateBias(bool isDelMove)
 	}
 }
 
-//Updates the bias vector using transition matrix data. Should be done around every 10^6 steps.
+//Updates the bias vector using transition matrix data
 inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 {
 	if (!biasingOn)
@@ -208,37 +194,19 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	}
 	std::cout << weightingFunction[weightingFunction.size() - 1] << "\n";
 	
-	//Calc/print vapor/liquid densities, vapor pressure, surface tension
-	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
-	double vaporDensity = InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
-	double liquidDensity = InvAvogadrosNumTimesTenToTheThirtieth * liquidPeak / boxVolume;
-	std::cout << "Vapor density: " << vaporDensity << " (mol/m3); Liquid peak: " << liquidPeak << " (mol/m3)\n";
-
-	double sumFunction = 0.0;
-	for (int i = 0; i < weightingFunction.size(); i++) {
-		sumFunction += weightingFunction[i];
-	}
-
-	double KBTimesTenToTheThirtieth = 13806485.2;			//Boltzmann constant times 10^30 (box volume from cubic angstroms to cubic meters)
-	double vaporPressure = (log(sumFunction) - log(weightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
+	std::cout << "\nVapor density: " << vaporDensity << " (mol/m3); Liquid peak: " << liquidDensity << " (mol/m3)\n";
 	std::cout << "Vapor pressure: " << vaporPressure << " (Pa)\n";
-
-	double KBTimesTenToTheTwentieth = 0.00138064852;
-	double surfaceTension = (0.5 * (weightingFunction[liquidPeak] + weightingFunction[vaporPeak]) - weightingFunction[midpoint]) * temperature * KBTimesTenToTheTwentieth / (2 * pow(boxVolume, 2.0 / 3.0));
 	std::cout << "Box Length (assumes cubic box): " << pow(boxVolume,1/3.0) << " (ang); Surface Tension: " << surfaceTension << " (N/m)\n";
 }
 
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 {
 	std::vector<double> newWeightingFunction(weightingFunction.size());
-	//for (int i = 0; i < weightingFunction.size(); i++) {
-	//	newWeightingFunction.push_back(0.0);
-	//}
 
 	int maximumMoleculesSampled = weightingFunction.size() - 1;
 	int i = weightingFunction.size() - 2;
 	while (weightingFunction[i] == maximumMoleculesSampled) {
-		maximumMoleculesSampled = weightingFunction[i];
+		maximumMoleculesSampled = i;
 		i--;
 	}
 
@@ -326,6 +294,23 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		infLoopPrevention += 1;
 		//Repeatedly solve until peaks and midpoint stabilize; infLoopPrevention prevents oscillation around a point
 	} while ((vaporPeak != oldVaporPeak || midpoint != oldMidpoint || liquidPeak != oldLiquidPeak) && infLoopPrevention<1000);
+
+	//Vapor/liquid-phase densities calculations
+	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
+	vaporDensity = InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
+	liquidDensity = InvAvogadrosNumTimesTenToTheThirtieth * liquidPeak / boxVolume;
+
+	//Vapor Pressure calculation
+	double sumFunction = 0.0;
+	for (int i = 0; i < maxMolecules; i++) {
+		sumFunction += newWeightingFunction[i];
+	}
+	double KBTimesTenToTheThirtieth = 13806485.2;			//Boltzmann constant times 10^30 (box volume from cubic angstroms to cubic meters)
+	vaporPressure = (log(sumFunction) - log(newWeightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
+
+	//Surface Tension calculation
+	double KBTimesTenToTheTwentieth = 0.00138064852;
+	surfaceTension = (0.5 * (newWeightingFunction[liquidPeak] + newWeightingFunction[vaporPeak]) - newWeightingFunction[midpoint]) * temperature * KBTimesTenToTheTwentieth / (2 * pow(boxVolume, 2.0 / 3.0));
 
 	return newWeightingFunction;
 }
