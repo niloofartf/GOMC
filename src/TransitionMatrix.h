@@ -205,7 +205,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 
 	int maximumMoleculesSampled = weightingFunction.size() - 1;
 	int i = weightingFunction.size() - 2;
-	while (weightingFunction[i] == maximumMoleculesSampled) {
+	while (weightingFunction[i] == weightingFunction[maximumMoleculesSampled]) {
 		maximumMoleculesSampled = i;
 		i--;
 	}
