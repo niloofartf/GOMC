@@ -20,7 +20,6 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 InputFileReader::InputFileReader(std::string inputFileName)
 {
   fs.open(inputFileName.c_str(), std::fstream::in);
-
 }
 
 InputFileReader::InputFileReader()

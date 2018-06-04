@@ -58,6 +58,8 @@ elseif(MSVC)
 endif()
 
 #EnsemblePreprocessor defines NVT = 1, GEMC = 2, GCMC = 3, NPT = 4
+# Global Executable
+set(GOMC_name "GOMC")
 
 #NPT (Isothermal-Isobaric) Ensemble
 set(NPT_flags "-DENSEMBLE=4")
@@ -80,6 +82,9 @@ include(${PROJECT_SOURCE_DIR}/CMake/FileLists.cmake)
 
 # Setup Serial version
 include(${PROJECT_SOURCE_DIR}/CMake/GOMCCPUSetup.cmake)
+
+# Setup GOMC executable
+include(${PROJECT_SOURCE_DIR}/CMake/GOMC.cmake)
 
 # find CUDA and set it up
 set(CUDA_SEPARABLE_COMPILATION ON)

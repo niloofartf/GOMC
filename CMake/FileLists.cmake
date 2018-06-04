@@ -152,6 +152,10 @@ set(cudaSources
     src/GPU/CalculateEwaldCUDAKernel.cu
     src/GPU/ConstantDefinitionsCUDAKernel.cu)
 
+set(singleExecutable
+    src/GOMC.cpp
+    src/InputFileReader.cpp)
+
 source_group("Header Files" FILES ${headers})
 source_group("Lib Headers" FILES ${libHeaders})
 source_group("CUDA Header Files" FILES ${cudaHeaders})
