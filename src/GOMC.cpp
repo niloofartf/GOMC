@@ -1,5 +1,6 @@
 #include "InputFileReader.h"
 #include <string>
+#include <stdlib.h>
 
 std::string EnsembleSearch(std::string filename);
 
