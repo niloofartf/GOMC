@@ -12,6 +12,11 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <ctime>
 
+// GJS
+#include <sstream>
+#include <list>
+// GJS
+
 //find and include appropriate files for getHostname
 #ifdef _WIN32
 #include <Winsock2.h>
@@ -50,6 +55,11 @@ int main(int argc, char *argv[])
 #ifdef GOMC_CUDA
   PrintGPUHardwareInfo();
 #endif
+
+  // GJS
+  int num_replicas = 1;
+  bool usingRE = false;
+
   //Only run if valid ensemble was detected.
   if (CheckAndPrintEnsemble()) {
     //FOLLOWING LINES ADDED TO OBTAIN INPUT PARAMETER FILE
@@ -77,7 +87,23 @@ int main(int argc, char *argv[])
           std::cout << "Use +p# command to set number of threads.\n";
           exit(EXIT_FAILURE);
         }
+    
 
+        // Checks all arguments for format +RE#
+        // It is array-oub safe
+        for ( int i = 0; i < argc; i++ ){
+            if (argv[i][0] == '+' && argv[i][1] == 'R' && argv[i][2] == 'E'){
+                for (int j = 3; j < strlen(argv[i]); j++){
+                    // Parses an char array into a string, then an int
+                    std::stringstream ss;
+                    ss << argv[i][j];
+                    std::string s = ss.str();
+                    num_replicas = std::stoi(s);
+                    usingRE = true;
+                }
+            }
+        }
+        // GJS
       }
     }
 
@@ -89,24 +115,114 @@ int main(int argc, char *argv[])
     printf("%-40s %-d \n", "Info: Number of threads", 1);
 #endif
 
-    //OPEN FILE
-    inputFileReader.open(inputFileString.c_str(), ios::in | ios::out);
+    // GJS
+    if(usingRE){
+   
+        string replica_name(inputFileString);
+        string path = "./replica";
 
-    //CHECK IF FILE IS OPENED...IF NOT OPENED EXCEPTION REASON FIRED
-    if (!inputFileReader.is_open()) {
-      std::cout << "Error: Cannot open/find " << inputFileString <<
-                " in the directory provided!\n";
-      exit(EXIT_FAILURE);
+        for (int i = 0; i < num_replicas; i++){
+
+            std::stringstream ss;
+            ss << i;
+            std::string s = ss.str();
+
+            // Directories should be arranged as such:
+            //      simulation directory with 0..N replica subdirectories
+            //
+            //      ./simulation_folder/replica#
+            //
+            //      The replica subdirs have the conf file for the replica:
+            //
+            //      in_N.conf
+            //
+            //      The prefix 'in_' should be provided 
+            //      as the fileInputString to GOMC.
+
+            path = "./replica" + s + '/' + replica_name + '_' + s + ".conf";
+
+            //OPEN FILE
+            inputFileReader.open(path.c_str(), ios::in | ios::out);
+
+            //CHECK IF FILE IS OPENED...IF NOT OPENED EXCEPTION REASON FIRED
+            if (!inputFileReader.is_open()) {
+              std::cout << "Error: Cannot open/find " << inputFileString <<
+                        " in the directory provided!\n";
+
+              std::cout << "Error: When running a replica-exchange GOMC, only" <<
+                        " enter the prefix as the input file,\n" <<
+                        " i.e. the prefix of files in_0...N.conf"<<
+                        " is \"in\" " << std::endl;
+
+              exit(EXIT_FAILURE);
+            }
+
+            //CLOSE FILE TO NOW PASS TO SIMULATION
+            inputFileReader.close();
+        }
+
+    } else {
+        //OPEN FILE
+        inputFileReader.open(inputFileString.c_str(), ios::in | ios::out);
+
+        //CHECK IF FILE IS OPENED...IF NOT OPENED EXCEPTION REASON FIRED
+        if (!inputFileReader.is_open()) {
+          std::cout << "Error: Cannot open/find " << inputFileString <<
+                    " in the directory provided!\n";
+          exit(EXIT_FAILURE);
+        }
+    
+        //CLOSE FILE TO NOW PASS TO SIMULATION
+        inputFileReader.close();
     }
 
-    //CLOSE FILE TO NOW PASS TO SIMULATION
-    inputFileReader.close();
+    // GJS
+    if (usingRE){
 
-    //ONCE FILE FOUND PASS STRING TO SIMULATION CLASS TO READ AND
-    //HANDLE PDB|PSF FILE
-    Simulation sim(inputFileString.c_str());
-    sim.RunSimulation();
-    PrintSimulationFooter();
+        string replica_name(inputFileString);
+        string path = "./replica";
+        #pragma omp parallel
+        #pragma omp parallel for
+
+        //  At this point, assign one thread per replica
+        //  Allow the internals to recruit as many threads as
+        //  possible later on.
+
+        for ( int i = 0; i < num_replicas; i++ ){
+
+            int id, Nthrds;
+            id = omp_get_thread_num();
+            Nthrds = omp_get_num_threads(); 
+            
+            if ( num_replicas <= Nthrds ) {
+
+                std::stringstream ss;
+                ss << id;
+                std::string s = ss.str();
+
+                path = "./replica" + s + '/' + replica_name + '_' + s + ".conf";
+
+                Simulation sim(path.c_str());
+                sim.RunSimulation();
+                PrintSimulationFooter();
+
+            } else {
+                  std::cout << "Error: Number of replicas " << num_replicas <<
+                            " is greater than number of available threads " << Nthrds << " !\n";
+                  exit(EXIT_FAILURE);
+            }
+        }
+    } else {
+
+        //ONCE FILE FOUND PASS STRING TO SIMULATION CLASS TO READ AND
+        //HANDLE PDB|PSF FILE
+        Simulation sim(inputFileString.c_str());
+        sim.RunSimulation();
+        PrintSimulationFooter();
+
+    }
+    // GJS
+
   }
   return 0;
 }

@@ -1,0 +1,3 @@
+Make this first line of CMake Lists.txt
+
+set (CMAKE_CXX_STANDARD 11)
