@@ -81,7 +81,12 @@ public:
   //private:
   //member data
   std::vector<char> chainLetter; //chain ids of each molecule
+
+  // GJS
+  // POSITIONS TO EXCHANGE
   std::vector<double> x, y, z; //coordinates of each particle
+  // GJS
+  
   std::vector<double> beta;  //beta value of each molecule
   std::vector<uint> box;
   std::vector<std::string> atomAliases, resNamesFull, resNames,

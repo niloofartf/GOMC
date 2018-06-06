@@ -16,6 +16,10 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 class Simulation
 {
 public:
+// GJS  
+  bool usingRE;
+  std::vector<double> replica_temps;
+// GJS
   explicit Simulation(char const*const configFileName);
   ~Simulation();
 

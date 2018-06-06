@@ -11,6 +11,11 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <iostream> //for cerr, cout;
 #include <string> //for var names, etc.
 
+// GJS
+#include <vector>
+#include <omp.h>
+// GJS
+
 #include "InputAbstracts.h" //For ReadableBase parent class.
 #include "InputFileReader.h" // Input reader
 #include "BasicTypes.h" //for uint, ulong
@@ -103,6 +108,10 @@ struct Input {
 
 struct Temperature {
   double inKelvin;
+
+// GJS
+  std::vector<double> replica_temps;
+// GJS
 };
 
 struct Exclude {
@@ -215,6 +224,9 @@ struct ChemicalPotential {
 };
 #endif
 struct SystemVals {
+// GJS
+  bool usingRE;
+// GJS
   ElectroStatic elect;
   Temperature T;
   FFValues ff;

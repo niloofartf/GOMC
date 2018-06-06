@@ -9,6 +9,9 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 #include <iomanip>
+// GJS
+#include <omp.h>
+// GJS
 
 #include "ConfigSetup.h"
 
@@ -70,6 +73,10 @@ ConfigSetup::ConfigSetup(void)
 #endif
 
   sys.T.inKelvin = DBL_MAX;
+    // GJS
+    sys.usingRE = false;
+    // GJS
+
   sys.ff.VDW_KIND = UINT_MAX;
   sys.ff.doTailCorr = true;
   sys.ff.rswitch = DBL_MAX;
@@ -224,8 +231,30 @@ void ConfigSetup::Init(const char *fileName)
     }
 #endif
     else if(line[0] == "Temperature") {
-      sys.T.inKelvin = stringtod(line[1]);
-      printf("%-40s %-4.4f K\n", "Info: Input Temperature", sys.T.inKelvin);
+// GJS
+        if (line.size() == 2 ){
+
+            sys.T.inKelvin = stringtod(line[1]);
+            printf("%-40s %-4.4f K\n", "Info: Input Temperature", sys.T.inKelvin);
+
+        } else {
+           
+            sys.usingRE = true; 
+            std::vector<double> replica_temps;
+
+            for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
+                replica_temps.push_back(stringtod(*itr));
+            }
+            
+            sys.T.inKelvin = replica_temps[omp_get_thread_num()];
+            sys.T.replica_temps = replica_temps;
+            printf("\n");
+            printf("%-40s ", "Info: Input Temperature");
+            printf(" %-4.4f K", sys.T.inKelvin);
+            
+        }
+// GJS
+ 
     } else if(line[0] == "Potential") {
       if(line[1] == "VDW") {
         sys.ff.VDW_KIND = sys.ff.VDW_STD_KIND;
@@ -456,8 +485,15 @@ void ConfigSetup::Init(const char *fileName)
     }
 #endif
     else if(line[0] == "OutputName") {
-      out.statistics.settings.uniqueStr.val = line[1];
-      printf("%-40s %-s \n", "Info: Output name", line[1].c_str());
+        if (sys.usingRE){
+            out.statistics.settings.uniqueStr.val = line[1];
+            out.statistics.settings.uniqueStr.val += std::to_string((int)sys.T.replica_temps[omp_get_thread_num()]); 
+            out.statistics.settings.uniqueStr.val += "K"; 
+            printf("%-40s %-s \n", "Info: Output name", line[1].c_str());
+        } else {
+            out.statistics.settings.uniqueStr.val = line[1];
+            printf("%-40s %-s \n", "Info: Output name", line[1].c_str());
+        }
     } else if(line[0] == "CoordinatesFreq") {
       out.state.settings.enable = checkBool(line[1]);
       if(line.size() == 3)

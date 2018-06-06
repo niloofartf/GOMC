@@ -11,6 +11,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "PSFOutput.h"
 #include <iostream>
 #include <iomanip>
+#include <omp.h>
 
 Simulation::Simulation(char const*const configFileName)
 {
@@ -19,6 +20,10 @@ Simulation::Simulation(char const*const configFileName)
   //as system depends on staticValues, and cpu sometimes depends on both.
   Setup set;
   set.Init(configFileName);
+// GJS
+  usingRE = set.config.sys.usingRE;
+  replica_temps = set.config.sys.T.replica_temps;
+// GJS
   totalSteps = set.config.sys.step.total;
   staticValues = new StaticVals(set);
   system = new System(*staticValues);
@@ -51,6 +56,9 @@ Simulation::~Simulation()
 
 void Simulation::RunSimulation(void)
 {
+// GJS
+    std::cout << "GJS" << omp_get_thread_num() << std::endl;
+// GJS
   double startEnergy = system->potential.totalEnergy.total;
   for (ulong step = 0; step < totalSteps; step++) {
     system->moveSettings.AdjustMoves(step);

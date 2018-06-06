@@ -1,3 +1,9 @@
 Make this first line of CMake Lists.txt
 
 set (CMAKE_CXX_STANDARD 11)
+
+Add my parameter 'RE Temps: a, b, c'
+to ConfigSetup
+
+I am working to get automated directory and conf file production.  The call to GOMC will still include only 1 .conf
+But I have to add a +RE flag, because whether or not this is a replica exchange needs to be known so the number of Simulation objects can equal the number of replicas.  By the time the ConfigSetup object notices there are more than one temp in the conf file, it is too late to build more simulation objects.  Perhaps the first simulation object could be a factory that will build more as needed, but a flag is an easier method that requires less digging into the guts of GOMC.
