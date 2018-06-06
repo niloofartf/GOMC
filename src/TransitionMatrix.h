@@ -196,9 +196,10 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	}
 	std::cout << weightingFunction[weightingFunction.size() - 1] << "\n";
 	
-	std::cout << "\nVapor density: " << vaporDensity << " (mol/m3); Liquid peak: " << liquidDensity << " (mol/m3)\n";
-	std::cout << "Vapor pressure: " << vaporPressure << " (Pa)\n";
-	std::cout << "Box Length (assumes cubic box): " << pow(boxVolume,1/3.0) << " (ang); Surface Tension: " << surfaceTension << " (N/m)\n";
+	std::cout << "\nVapor peak: " << vaporPeak << "; midpoint: " << midpoint << "; liquid peak: " << liquidPeak;
+	std::cout << "\nVapor density: " << vaporDensity << " (mol/m3); Liquid peak: " << liquidDensity << " (mol/m3)";
+	std::cout << "\nVapor pressure: " << vaporPressure << " (Pa)";
+	std::cout << "\nBox Length (assumes cubic box): " << pow(boxVolume,1/3.0) << " (ang); Surface Tension: " << surfaceTension << " (N/m)\n";
 }
 
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
@@ -270,7 +271,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		//Determine new peaks of vapor/liquid regions, midpoint (lowest point between peaks)
 		std::cout << "";
 		vaporPeak = 0;
-		for (int i = 0; i < midpoint; i++) {
+		for (int i = 0; i < maxMolecules/2; i++) {
 			if (newWeightingFunction[i] > newWeightingFunction[vaporPeak]) {
 				vaporPeak = i;
 			}
