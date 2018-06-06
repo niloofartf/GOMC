@@ -56,6 +56,7 @@ private:
 	bool biasingOn;						//Config flag, turns biasing on or off
   ulong biasStep;                       //Biasing steps
   double boxVolume, temperature, vaporPressure, surfaceTension, vaporDensity, liquidDensity;
+  int INITIAL_WEIGHTINGFUNCTION_VALUE;
   int vaporPeak, midpoint, liquidPeak;
   
   uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 
@@ -83,13 +84,14 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
 
+	INITIAL_WEIGHTINGFUNCTION_VALUE = 400;
 	int totMolec = molLookRef.NumKindInBox(molKind, mv::BOX0) + molLookRef.NumKindInBox(molKind, mv::BOX1);
 	//del/etc/ins, del/etc/ins, ... 
 	transitionMatrix.resize(3 * totMolec);
 	for (int i = 0; i < transitionMatrix.size(); i++) { transitionMatrix[i] = 0.0; }
 
 	weightingFunction.resize(totMolec);
-	for (int i = 0; i < weightingFunction.size(); i++) { weightingFunction[i] = 1.0; }
+	for (int i = 0; i < weightingFunction.size(); i++) { weightingFunction[i] = INITIAL_WEIGHTINGFUNCTION_VALUE; }
 }
 
 inline int TransitionMatrix::GetTMDelIndex(int numMolec) { return numMolec * 3; }
@@ -153,7 +155,7 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 		return;
 
   if((step + 1) % biasStep == 0) {
-	  weightingFunction[0] = 1.0;
+	  weightingFunction[0] = INITIAL_WEIGHTINGFUNCTION_VALUE;
 
 	  double sumEntry, sumEntryPlusOne, probInsert, probDelete;
 	  for (int i = 1; i<weightingFunction.size(); i++) {
@@ -202,6 +204,11 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 {
 	std::vector<double> newWeightingFunction(weightingFunction.size());
+
+	//Normalize weighting function
+	for (int i = 0; i < weightingFunction.size(); i++) {
+		weightingFunction[i] -= INITIAL_WEIGHTINGFUNCTION_VALUE;
+	}
 
 	int maximumMoleculesSampled = weightingFunction.size() - 1;
 	int i = weightingFunction.size() - 2;
