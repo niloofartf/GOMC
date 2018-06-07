@@ -84,7 +84,7 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
 
-	INITIAL_WEIGHTINGFUNCTION_VALUE = 400;
+	INITIAL_WEIGHTINGFUNCTION_VALUE = 1.0;
 	int totMolec = molLookRef.NumKindInBox(molKind, mv::BOX0) + molLookRef.NumKindInBox(molKind, mv::BOX1);
 	//del/etc/ins, del/etc/ins, ... 
 	transitionMatrix.resize(3 * totMolec);
@@ -129,18 +129,19 @@ inline void TransitionMatrix::IncrementAcceptanceProbability(int molKind)
 //Note: Must calculate bias /after/ adding acceptance probabilities
 inline double TransitionMatrix::CalculateBias(int move)
 {
-	//If not running a transition matrix run, don't apply biasing to move acceptance chance
+	//If not running a transition matrix run, don't apply biasing
 	if (!biasingOn)
 		return 1.0;
 
 	uint numMolecules = molLookRef.NumKindInBox(molKind, mv::BOX0);
+	//move == 0: deletion move; move == 1: insertion move
 	if (move == 0 && numMolecules != 0)
 	{
-		return weightingFunction[numMolecules - 1] / weightingFunction[numMolecules];
+		return exp(weightingFunction[numMolecules] - weightingFunction[numMolecules - 1]);
 	}
 	else if (move == 1 && numMolecules != weightingFunction.size()-1)
 	{
-		return weightingFunction[numMolecules] / weightingFunction[numMolecules + 1];
+		return exp(weightingFunction[numMolecules] - weightingFunction[numMolecules + 1]);
 	}
 	else 
 	{
@@ -205,11 +206,6 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 {
 	std::vector<double> newWeightingFunction(weightingFunction.size());
-
-	//Normalize weighting function
-	for (int i = 0; i < weightingFunction.size(); i++) {
-		weightingFunction[i] -= INITIAL_WEIGHTINGFUNCTION_VALUE;
-	}
 
 	int maximumMoleculesSampled = weightingFunction.size() - 1;
 	int i = weightingFunction.size() - 2;
