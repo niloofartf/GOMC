@@ -299,6 +299,9 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		//Repeatedly solve until peaks and midpoint stabilize; infLoopPrevention prevents oscillation around a point
 	} while ((vaporPeak != oldVaporPeak || midpoint != oldMidpoint || liquidPeak != oldLiquidPeak) && infLoopPrevention<1000);
 
+	//Zero out junk data
+	for (int i = maxMolecules + 1; i < newWeightingFunction.size(); i++) { newWeightingFunction[i] = 0.0; }
+
 	//Vapor/liquid-phase densities calculations
 	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
 	vaporDensity = InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
