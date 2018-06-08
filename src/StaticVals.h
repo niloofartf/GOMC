@@ -70,10 +70,23 @@ public:
   {
     return move % simEventFreq.perAdjust == 0;
   }
+// GJS
+  bool DoExchange(const uint move)
+  {
+    return move % simEventFreq.perExchange == 0;
+  }
+// GJS
   double AcceptPercent(const uint tempAccept)
   {
     return (double)(tempAccept) / (double)(simEventFreq.perAdjust);
   }
+
+// GJS
+  double ExchAcceptPercent(const uint tempExchAccept)
+  {
+    return (double)(tempExchAccept) / (double)(simEventFreq.perExchange);
+  }
+// GJS
 
   void InitMovePercents(config_setup::MovePercents const& percent);
 };

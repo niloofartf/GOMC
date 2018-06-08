@@ -19,6 +19,9 @@ void MoveSettings::Init(StaticVals const& statV,
                         pdb_setup::Remarks const& remarks)
 {
   perAdjust = statV.simEventFreq.perAdjust;
+// GJS
+  perExchange = statV.simEventFreq.perExchange;
+// GJS
   for (uint m = 0; m < mv::COUNT; m++) {
     if (m < mv::SCALEABLE) {
       tempTries[m] = 0;
@@ -99,7 +102,7 @@ void MoveSettings::AdjustMoves(const uint step)
   }
 }
 
-//Adjust responsibly
+//"Adjust responsibly" - Capt. Morgan
 void MoveSettings::Adjust(const uint majMoveKind,
                           const uint moveIndex, const uint b)
 {
@@ -135,3 +138,19 @@ void MoveSettings::Adjust(const uint majMoveKind,
     break;
   }
 }
+
+// GJS
+void MoveSettings::ExchangeMoves(const uint step)
+{
+  //Check whether or not to attempt exchange.
+  if ((step + 1) % perExchange == 0) {
+    //for (uint m = 0; m < replica_temps.size(); ++m) {
+//      uint majMoveKind = m / BOX_TOTAL;
+
+//      uint b = m - (majMoveKind * BOXES_WITH_U_NB);
+ //     Exchange(majMoveKind, m, b);
+   // }
+  }
+}
+void MoveSettings::Exchange(const uint majMoveKind, const uint moveIndex, const uint b){ return; }
+// GJS

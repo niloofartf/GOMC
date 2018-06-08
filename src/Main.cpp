@@ -112,8 +112,9 @@ int main(int argc, char *argv[])
     Simulation sim(inputFileString.c_str());
     // GJS
     bool usingRE = sim.usingRE;
+    int num_replicas = sim.num_replicas;
 
-    if (!usingRE){
+    if (!(usingRE)){
         sim.RunSimulation();
         PrintSimulationFooter();
     } else {
@@ -123,11 +124,9 @@ int main(int argc, char *argv[])
         // Call RunSim multithreaded
         // PrintSimulationFooter();
         std::cout << "I recognize you want to use NVT-RE since usingRE is true.\n " << std::endl; 
-        
-        int num_replicas = sim.replica_temps.size();
-       
+  
         int i;
-        #pragma omp parallel for default(shared) private(i)
+        #pragma omp parallel for //default(shared) private(i)
             for (i = 0; i < num_replicas; i++) {
                 Simulation sim_re(inputFileString.c_str());
                 sim_re.RunSimulation();

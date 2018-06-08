@@ -53,6 +53,7 @@ ConfigSetup::ConfigSetup(void)
   sys.step.total = ULONG_MAX;
   sys.step.equil = ULONG_MAX;
   sys.step.adjustment = ULONG_MAX;
+  sys.step.exchange = ULONG_MAX;
   sys.step.pressureCalcFreq = ULONG_MAX;
   sys.step.pressureCalc = true;
   in.ffKind.numOfKinds = 0;
@@ -238,7 +239,7 @@ void ConfigSetup::Init(const char *fileName)
             printf("%-40s %-4.4f K\n", "Info: Input Temperature", sys.T.inKelvin);
 
         } else {
-           
+
             sys.usingRE = true; 
             std::vector<double> replica_temps;
 
@@ -335,6 +336,12 @@ void ConfigSetup::Init(const char *fileName)
       sys.step.adjustment = stringtoi(line[1]);
       printf("%-40s %-lu \n", "Info: Move adjustment frequency",
              sys.step.adjustment);
+    // GJS
+    } else if(line[0] == "ExchSteps") {
+      sys.step.exchange = stringtoi(line[1]);
+      printf("%-40s %-lu \n", "Info: Replica Exchange frequency",
+             sys.step.exchange);
+    // GJS
     } else if(line[0] == "PressureCalc") {
       sys.step.pressureCalc = checkBool(line[1]);
       if(line.size() == 3)
@@ -809,6 +816,12 @@ void ConfigSetup::verifyInputs(void)
     std::cout << "Error: Move adjustment frequency is not specified!\n";
     exit(EXIT_FAILURE);
   }
+// GJS
+  if(sys.step.exchange == ULONG_MAX && sys.T.replica_temps.size() > 1) {
+    std::cout << "Error: Replica exchange frequency is not specified, but more than one temperature is provided!\n";
+    exit(EXIT_FAILURE);
+  }
+// GJS
   if(sys.step.equil == ULONG_MAX) {
     std::cout << "Error: Equilibration steps is not specified!\n";
     exit(EXIT_FAILURE);

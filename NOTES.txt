@@ -7,3 +7,16 @@ to ConfigSetup
 
 I am working to get automated directory and conf file production.  The call to GOMC will still include only 1 .conf
 But I have to add a +RE flag, because whether or not this is a replica exchange needs to be known so the number of Simulation objects can equal the number of replicas.  By the time the ConfigSetup object notices there are more than one temp in the conf file, it is too late to build more simulation objects.  Perhaps the first simulation object could be a factory that will build more as needed, but a flag is an easier method that requires less digging into the guts of GOMC.
+
+6/5/18
+So I have independent paralell sims that run on one thread each.  num threads must be > than replicas still.  I have added a check to make sure that if the user provides more than one temperature in the .conf file they also provide an exchange frequency.  ExchSteps ###
+I think I can make the exchange process similar to the move adjust process, with the added complexity of exchanges alternating in parity i.e:
+
+w/ a 5 replica system
+
+att 1 : 0-1 2-3
+att 2 : 1-2 3-4
+att 3 : 0-1 2-3
+att 4 : 1-2 3-4
+
+Also there is the atomic swap b/w threads of coords, COM, cell list, box dim, and molecules, that needs to be implemented.  Since these are threads, as opposed to processes, I might be able to forgoe building an array of each system's potential energy and simply pass around a reference to the value, for the metropolis criterion.  Also, this may simplify the exchange process.

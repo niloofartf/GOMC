@@ -11,13 +11,18 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "ConfigSetup.h" //for event frequencies from config file.
 
 struct SimEventFrequency {
-  ulong total, perAdjust, tillEquil, pCalcFreq;
+// GJS
+  ulong total, perAdjust, tillEquil, pCalcFreq, perExchange;
+// GJS
   bool pressureCalc;
 
   void Init(config_setup::Step const& s)
   {
     total = s.total;
     perAdjust = s.adjustment;
+// GJS
+    perExchange = s.exchange;
+// GJS
     tillEquil = s.equil;
     pCalcFreq = s.pressureCalcFreq;
     pressureCalc = s.pressureCalc;

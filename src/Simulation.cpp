@@ -6,6 +6,9 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
 #include "Simulation.h"
 #include "Setup.h"          //For setup object
+#include "barebones_Replica.cpp"
+// GJS
+// GJS
 
 #include "EnergyTypes.h"
 #include "PSFOutput.h"
@@ -23,18 +26,26 @@ Simulation::Simulation(char const*const configFileName)
 // GJS
   usingRE = set.config.sys.usingRE;
   replica_temps = set.config.sys.T.replica_temps;
+  num_replicas = replica_temps.size(); 
 // GJS
   totalSteps = set.config.sys.step.total;
   staticValues = new StaticVals(set);
   system = new System(*staticValues);
   staticValues->Init(set, *system);
   system->Init(set);
-  //recal Init for static value for initializing ewald since ewald is
+  //recall Init for static value for initializing ewald since ewald is
   //initialized in system
   staticValues->InitOver(set, *system);
   cpu = new CPUSide(*system, *staticValues);
   cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
             totalSteps);
+  // GJS
+
+  if (usingRE){
+      barebones_Replica barebones_Replica(omp_get_thread_num(), num_replicas, set.config.sys.T.inKelvin, staticValues->mol.count);
+      barebones_Replica.init(set.config.sys.step.exchange); 
+  }
+  // GJS
 
   //Dump combined PSF
   PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap,
@@ -57,11 +68,15 @@ Simulation::~Simulation()
 void Simulation::RunSimulation(void)
 {
 // GJS
-    std::cout << "GJS" << omp_get_thread_num() << std::endl;
+  std::cout << "GJS" << omp_get_thread_num() << std::endl;
 // GJS
   double startEnergy = system->potential.totalEnergy.total;
   for (ulong step = 0; step < totalSteps; step++) {
     system->moveSettings.AdjustMoves(step);
+// GJS
+    if (usingRE)
+        system->moveSettings.ExchangeMoves(step);
+// GJS
     system->ChooseAndRunMove(step);
     cpu->Output(step);
 

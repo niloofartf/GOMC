@@ -33,6 +33,11 @@ public:
 
   void AdjustMoves(const uint step);
 
+// GJS
+  void ExchangeMoves(const uint step);
+  void Exchange(const uint majMoveKind, const uint moveIndex, const uint b);
+// GJS
+
   void Adjust(const uint majMoveKind, const uint moveIndex, const uint b);
 
   double Scale(const uint move) const
@@ -46,6 +51,9 @@ private:
   uint accepted[mv::COUNT];
   uint tries[mv::COUNT];
   uint perAdjust;
+// GJS
+  uint perExchange;
+// GJS
   uint tempAccepted[mv::SCALEABLE], tempTries[mv::SCALEABLE];
 
 #if ENSEMBLE == GEMC

@@ -13,17 +13,20 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "StaticVals.h"
 #include "BasicTypes.h"
 
+
 class Simulation
 {
 public:
 // GJS  
   bool usingRE;
   std::vector<double> replica_temps;
+  int num_replicas;
 // GJS
   explicit Simulation(char const*const configFileName);
   ~Simulation();
 
   void RunSimulation(void);
+
 
 #ifndef NDEBUG
   void RunningCheck(const uint step);

@@ -158,7 +158,9 @@ struct GEMCKind {
 
 
 struct Step {
-  ulong total, equil, adjustment, pressureCalcFreq;
+// GJS
+  ulong total, equil, adjustment, pressureCalcFreq, exchange;
+// GJS
   bool pressureCalc;
 };
 
