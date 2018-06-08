@@ -267,10 +267,11 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		//Determine new peaks of vapor/liquid regions, midpoint (lowest point between peaks)
 		std::cout << "";
 		vaporPeak = 0;
-		for (int i = 0; i < maxMolecules/2; i++) {
-			if (newWeightingFunction[i] > newWeightingFunction[vaporPeak]) {
+		for (int i = 0; i < midpoint; i++) {
+			if (newWeightingFunction[i] > newWeightingFunction[i+1]&& newWeightingFunction[i] > newWeightingFunction[i + 2] && newWeightingFunction[i] > newWeightingFunction[i + 3]) {
 				vaporPeak = i;
 			}
+			break;
 		}
 		std::cout << "";
 		liquidPeak = midpoint;
@@ -297,7 +298,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		std::cout << "";
 		infLoopPrevention += 1;
 		//Repeatedly solve until peaks and midpoint stabilize; infLoopPrevention prevents oscillation around a point
-	} while ((vaporPeak != oldVaporPeak || midpoint != oldMidpoint || liquidPeak != oldLiquidPeak) && infLoopPrevention<1000);
+	} while ((vaporPeak != oldVaporPeak || midpoint != oldMidpoint || liquidPeak != oldLiquidPeak) && infLoopPrevention<10);
 
 	//Zero out junk data
 	for (int i = maxMolecules + 1; i < newWeightingFunction.size(); i++) { newWeightingFunction[i] = 0.0; }
