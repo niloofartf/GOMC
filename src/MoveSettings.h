@@ -13,8 +13,12 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "PDBSetup.h" //Primary source of volume.
 #include "MoveConst.h"           //For sizes of arrays.
 
+
 class StaticVals;                 //For various initialization constants.
 class BoxDimensions;              //For axis sizes
+//class barebones_Replica;              //For re
+
+class barebones_Replica;              //For replica exchange
 
 class MoveSettings
 {
@@ -34,8 +38,8 @@ public:
   void AdjustMoves(const uint step);
 
 // GJS
-  void ExchangeMoves(const uint step);
-  void Exchange(const uint majMoveKind, const uint moveIndex, const uint b);
+  void ExchangeMoves(const uint step, barebones_Replica* re, const float energy);
+  void Exchange(barebones_Replica* re, const float energy, uint step);
 // GJS
 
   void Adjust(const uint majMoveKind, const uint moveIndex, const uint b);

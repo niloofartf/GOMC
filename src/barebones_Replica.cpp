@@ -1,14 +1,30 @@
+#define KILO (1e3)
+#define AVOGADRO         (6.02214129e23)
+#define BOLTZMANN (1.3806488e-23)  /* (J/K, NIST 2010 CODATA */
+#define RGAS        (BOLTZMANN*AVOGADRO)   /* (J/(mol K))  */
+#define BOLTZ   (RGAS/KILO)    /* (kJ/(mol K)) */
+
+
 class barebones_Replica {
 public:
+    
+enum {
+    ereTEMP, erePRESSURE
+};
+
     int       repl;        /* replica ID */
     int       nrepl;       /* total number of replica */
     float      temp;        /* temperature */
     int      numAtomsInSystem;        /* natoms */
+
+    int i, j, k;
     
     int       type;        /* replica exchange type from ere enum */
+    std::vector<double>  replica_temps;           /* temperatures of replicas */
+    
     float    **q;           /* quantity, e.g. temperature or lambda; first index is ere, second index is replica ID */
     bool    bNPT;        /* use constant pressure and temperature */
-    bool    bNVT;        /* use constant pressure and temperature */
+    bool    bVol;        /* use constant pressure and temperature */
     float     *pres;        /* replica pressures */
     int      *ind;         /* replica indices */
     int      *allswaps;    /* used for keeping track of all the replica swaps */
@@ -36,15 +52,22 @@ public:
     barebones_Replica(  int repl,
                         int nrepl,
                         float temp,
-                        int natoms) {
+                        int natoms,
+                        std::vector<double> replica_temps) {
+        // For now, since I'm assuming NVT
+        this->bNPT = false;
+
+        this->replica_temps = replica_temps;
+
         this->repl = repl;
         this->nrepl = nrepl;
         this->temp = temp;
         this->numAtomsInSystem = natoms;
     }
 
-    void init(int   exchangeInterval
-              ){
+    void init(int   exchangeInterval,
+              int   randomSeed)
+    {
     
     /* Make an index for increasing replica order */
     /* only makes sense if one or the other is varying, not both!
@@ -96,5 +119,190 @@ public:
             this->de[i] = (float*)malloc((this->nrepl)*sizeof(float));
         }
         this->nst =     exchangeInterval;
+
+        if (this->seed == UINT_MAX){
+            // NOTE : Ask Md and Younes how they autoseed            
+        } else {
+            this->seed = randomSeed;
+        }
+
+        printf("\nReplic exchange interval: %d\n", this->nst);
+        printf("\nReplica random seed: %d\n", this->seed);
+
+        this->nattempt[0] = 0;
+        this->nattempt[1] = 0;
+
+        printf("Replica exchange information below: ex and x = exchange, pr = probability\n");
+
+
     }
+
+    //bool replica_exchange(const float energy, PRNG prng, float vol){
+    bool replica_exchange(const float energy, uint step){
+
+        int j;
+        int replica_id = 0;
+        int exchange_partner;
+        int maxswap = 0;
+
+        /* Number of rounds of exchanges needed to deal with any multiple
+        * exchanges. */
+        /* Where each replica ends up after the exchange attempt(s). */
+        /* The order in which multiple exchanges will occur. */
+    bool bThisReplicaExchanged = false;
+
+    
+    // if master thread
+        replica_id = this->repl;
+        //test_for_replica_exchange(energy, uint step);
+        //prepare_to_do_exchange();
+
+        if (bThisReplicaExchanged){
+    
+            /* There will be only one swap cycle with standard replica
+             * exchange, but there may be multiple swap cycles if we
+             * allow multiple swaps. */
+
+            for (j = 0; j < maxswap; j++)
+            {
+                exchange_partner = this->order[replica_id][j];
+
+                if (exchange_partner != replica_id)
+                {
+                    bool debug = true;
+                    /* Exchange the global states between the master nodes */
+                    if (debug)
+                    {
+                        printf("Exchanging %d with %d\n", replica_id, exchange_partner);
+                    }
+                    exchange_state(exchange_partner);
+                }
+            }
+            /* For temperature-type replica exchange, we need to scale
+             * the velocities. */
+                scale_velocities();
+
+ 
+        }
+    }
+
+    static void exchange_state(int exchange_partner){}
+    void scale_velocities(){}
+//    void test_for_replica_exchange(PRNG prng, float vol, const float energy){
+    //void test_for_replica_exchange(PRNG prng, const float energy){
+    void test_for_replica_exchange(const float energy, uint step){
+
+        int         m, i, j, a, b, ap, bp, i0, i1, tmp;
+        float       delta   = 0.0;
+        bool        bPrint, bMultiEx;
+        bool        *bEx    = this->bEx;
+        float       *prob   = this->prob;
+        int         *pind   = this->destinations;   /* Permuted Index */
+        bool        bEpot   = false;
+        bool        bEDLambda   = false;
+        bool        bEVol   = false;
+        
+        bMultiEx = (this->nex > 1);
+        
+        if (this-> bNPT){
+            for (i = 0; i < this->nrepl ; i++){
+                this->Vol[i] = 0.0;
+            }
+            this->bVol = true;
+// NVT only for now
+//            this->Vol[this->repl] = vol;
+        }
+
+        // ereTEMP
+        for (i = 0; i < this->nrepl; i++){
+            this->Epot[i] = 0.0;
+        }
+
+        bEpot   = true;
+
+        this->Epot[this->repl] = energy; //  POTENTIAL ENERGY
+        
+        for (i = 0; i < this->nrepl; i++) {
+            this->beta[i] = 1.0/(replica_temps[i]*BOLTZ);
+        }
+
+        // endERETEMP
+
+        
+        // Do some thread com to populate global arrays
+
+        // SPACE HOLDER
+        // SPACE HOLDER
+        // SPACE HOLDER
+
+        // Standard nearest neighbor replica exchange
+/*
+        m = (step / this->nst) % 2;
+        for (i = 1; i < this->nrepl; i++)
+        {
+            a = this->ind[i-1];
+            b = this->ind[i];
+
+            bPrint = (this->repl == a || this->repl == b);
+            if (i % 2 == m)
+            {
+                delta = calc_delta(fplog, bPrint, re, a, b, a, b);
+                if (delta <= 0)
+                {
+                    // accepted 
+                    prob[i] = 1;
+                    bEx[i]  = TRUE;
+                }
+                else
+                {
+                    if (delta > PROBABILITYCUTOFF)
+                    {
+                        prob[i] = 0;
+                    }
+                    else
+                    {
+                        prob[i] = exp(-delta);
+                    }
+                    // roll a number to determine if accepted. For now it is superfluous to
+                    // reset, but just in case we ever add more calls in different branches
+                    // it is safer to always reset the distribution.
+                    uniformRealDist.reset();
+                    real randVar = uniformRealDist(rng);
+                    bEx[i] = randVar < prob[i];
+                }
+                this->prob_sum[i] += prob[i];
+
+                if (bEx[i])
+                {
+                    // swap these two 
+                    tmp       = pind[i-1];
+                    pind[i-1] = pind[i];
+                    pind[i]   = tmp;
+                    this->nexchange[i]++;  // statistics for back compatibility 
+                }
+            }
+            else
+            {
+                prob[i] = -1;
+                bEx[i]  = FALSE;
+            }
+        }
+        // print some statistics 
+        print_ind(fplog, "ex", re->nrepl, re->ind, bEx);
+        print_prob(fplog, "pr", re->nrepl, prob);
+        fprintf(fplog, "\n");
+        this->nattempt[m]++;
+    }
+
+    // record which moves were made and accepted 
+    for (i = 0; i < re->nrepl; i++)
+    {
+        this->nmoves[re->ind[i]][pind[i]] += 1;
+        this->nmoves[pind[i]][re->ind[i]] += 1;
+    }
+    fflush(fplog); // make sure we can see what the last exchange was 
+        */
+    }
+    void prepare_to_do_exchange(){}
+    double calc_delta(){}
 };

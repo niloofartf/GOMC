@@ -9,11 +9,17 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "BoxDimensionsNonOrth.h"
 #include "StaticVals.h" //For init info.
 
+// GJS
+#include "barebones_Replica.cpp"
+// GJS
+
 #include "NumLib.h" //For bounding functions.
 #include "GeomLib.h"    //For M_PI
 
 const double MoveSettings::TARGET_ACCEPT_FRACT = 0.50;
 const double MoveSettings::TINY_AMOUNT = 0.0000001;
+
+//class barebones_Replica;
 
 void MoveSettings::Init(StaticVals const& statV,
                         pdb_setup::Remarks const& remarks)
@@ -140,17 +146,15 @@ void MoveSettings::Adjust(const uint majMoveKind,
 }
 
 // GJS
-void MoveSettings::ExchangeMoves(const uint step)
+void MoveSettings::ExchangeMoves(const uint step, barebones_Replica* re, const float energy)
 {
   //Check whether or not to attempt exchange.
-  if ((step + 1) % perExchange == 0) {
-    //for (uint m = 0; m < replica_temps.size(); ++m) {
-//      uint majMoveKind = m / BOX_TOTAL;
-
-//      uint b = m - (majMoveKind * BOXES_WITH_U_NB);
- //     Exchange(majMoveKind, m, b);
-   // }
-  }
+    if ((step + 1) % perExchange == 0) {
+      Exchange(re, energy, step);
+    }
 }
-void MoveSettings::Exchange(const uint majMoveKind, const uint moveIndex, const uint b){ return; }
+
+void MoveSettings::Exchange(barebones_Replica* re, const float energy, uint step){ 
+        re->replica_exchange(energy, step);
+}
 // GJS

@@ -37,6 +37,7 @@ private:
   System * system;
   CPUSide * cpu;
   ulong totalSteps;
+  barebones_Replica* re;
 };
 
 #endif /*SIMULATION_H*/

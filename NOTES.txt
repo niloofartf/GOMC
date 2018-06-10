@@ -20,3 +20,6 @@ att 3 : 0-1 2-3
 att 4 : 1-2 3-4
 
 Also there is the atomic swap b/w threads of coords, COM, cell list, box dim, and molecules, that needs to be implemented.  Since these are threads, as opposed to processes, I might be able to forgoe building an array of each system's potential energy and simply pass around a reference to the value, for the metropolis criterion.  Also, this may simplify the exchange process.
+
+
+Are there routes through this program where more calls to the rng are made than others.  I need consistency across each replica's prng so that they return the same number on each t4re.

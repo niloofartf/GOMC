@@ -6,8 +6,8 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
 #include "Simulation.h"
 #include "Setup.h"          //For setup object
-#include "barebones_Replica.cpp"
 // GJS
+#include "barebones_Replica.cpp"
 // GJS
 
 #include "EnergyTypes.h"
@@ -21,6 +21,8 @@ Simulation::Simulation(char const*const configFileName)
   //NOTE:
   //IMPORTANT! Keep this order...
   //as system depends on staticValues, and cpu sometimes depends on both.
+  barebones_Replica* re;
+
   Setup set;
   set.Init(configFileName);
 // GJS
@@ -42,8 +44,8 @@ Simulation::Simulation(char const*const configFileName)
   // GJS
 
   if (usingRE){
-      barebones_Replica barebones_Replica(omp_get_thread_num(), num_replicas, set.config.sys.T.inKelvin, staticValues->mol.count);
-      barebones_Replica.init(set.config.sys.step.exchange); 
+      re = new barebones_Replica(omp_get_thread_num(), num_replicas, set.config.sys.T.inKelvin, staticValues->mol.count, replica_temps);
+      re->init(set.config.sys.step.exchange, set.config.in.prng.seed); 
   }
   // GJS
 
@@ -68,6 +70,7 @@ Simulation::~Simulation()
 void Simulation::RunSimulation(void)
 {
 // GJS
+
   std::cout << "GJS" << omp_get_thread_num() << std::endl;
 // GJS
   double startEnergy = system->potential.totalEnergy.total;
@@ -75,7 +78,11 @@ void Simulation::RunSimulation(void)
     system->moveSettings.AdjustMoves(step);
 // GJS
     if (usingRE)
-        system->moveSettings.ExchangeMoves(step);
+        // GJS
+        // This epot is either : 1) old , 2) expensive to calculate
+        // I need to align the exchange frequency with the potential calc freq
+        // GJS
+        system->moveSettings.ExchangeMoves(step, re, system->potential.totalEnergy.total);
 // GJS
     system->ChooseAndRunMove(step);
     cpu->Output(step);
