@@ -43,6 +43,29 @@ public:
     mol.AssignKinds(pdb.atoms, ff);
 
   }
+
+  void Init(ConfigSetup &config)
+  {
+    //Read in FF data.
+    ff.Init(config.in.files.param.name,config.in.ffKind.isCHARMM);
+    //Read PDB dat
+    pdb.Init(config.in.restart, config.in.files.pdb.name);
+    //Read molecule data from psf
+    prng.Init(config.in.restart, config.in.prng, config.in.files.seed.name);
+
+    if(mol.Init(config.in.restart, config.in.files.psf.name) != 0)
+    {
+      exit(EXIT_FAILURE);
+    }
+    mol.AssignKinds(pdb.atoms, ff);
+
+  }
+
+  void ReadConf(char const*const configFileName)
+  {
+    //Read in all config data
+    config.Init(configFileName);
+  }
 };
 
 #endif

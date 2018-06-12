@@ -109,31 +109,39 @@ int main(int argc, char *argv[])
     //CLOSE FILE TO NOW PASS TO SIMULATION
     inputFileReader.close();
 
-    Simulation sim(inputFileString.c_str());
-    // GJS
-    bool usingRE = sim.usingRE;
-    int num_replicas = sim.num_replicas;
+      //read config file
+      Setup set;
+      set.ReadConf(inputFileString.c_str());
+      ulong totalSteps = set.config.sys.step.total;
+      std::string uniqueName = set.config.out.statistics.settings.uniqueStr.val;
+      int numReplica = set.config.sys.T.replica_temps.size();
+      Simulation *sim = new Simulation[numReplica];
 
-    if (!(usingRE)){
-        sim.RunSimulation();
-        PrintSimulationFooter();
-    } else {
-        // Make N copies of sim
-        // Set each with a temp value
-        // Build directory structure
-        // Call RunSim multithreaded
-        // PrintSimulationFooter();
-        std::cout << "I recognize you want to use NVT-RE since usingRE is true.\n " << std::endl; 
-  
-        int i;
-        #pragma omp parallel for //default(shared) private(i)
-            for (i = 0; i < num_replicas; i++) {
-                Simulation sim_re(inputFileString.c_str());
-                sim_re.RunSimulation();
-            }
-    }
-    // GJS
-  }
+      for(int i = 0; i < numReplica; i++)
+      {
+            //set the temperature of the system for each replica
+            set.config.sys.T.inKelvin = set.config.sys.T.replica_temps[i];
+            //set the unique name for ach replica
+            std::stringstream ss;
+            ss << set.config.sys.T.replica_temps[i];
+            set.config.out.statistics.settings.uniqueStr.val = uniqueName
+              + "_" + ss.str();
+	        //initialize all classes with new setup file
+	        sim[i].Init(set);
+      }
+
+      for (ulong step = 0; step < totalSteps; step++)
+      {
+	    #pragma omp paralell for shared(sim) private(i)
+        for(int i = 0; i < numReplica; i++)
+	    {
+	        sim[i].RunSimulation(step);
+	    }
+        //if (step + 1 % exhINT)
+        //    #omp barrier
+        //    replica_exchange();
+      }
+  }  
   return 0;
 }
 

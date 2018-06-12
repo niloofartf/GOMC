@@ -1,4 +1,5 @@
 #include "System.h"
+#include "omp.h"
 
 #define KILO (1e3)
 #define AVOGADRO         (6.02214129e23)
@@ -164,7 +165,10 @@ enum {
     
     // if master thread
         replica_id = this->repl;
-        test_for_replica_exchange(energy, step);
+       
+        cout << "in replica_exchange, this->repl : " << replica_id << " " << endl;
+
+         test_for_replica_exchange(energy, step);
         //prepare_to_do_exchange();
 
         if (bThisReplicaExchanged){

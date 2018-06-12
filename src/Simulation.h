@@ -24,9 +24,12 @@ public:
   int num_replicas;
 // GJS
   explicit Simulation(char const*const configFileName);
+  explicit Simulation(void);
+  void Init(Setup &set);
   ~Simulation();
 
   void RunSimulation(void);
+  void RunSimulation(ulong step);
 
 
 #ifndef NDEBUG

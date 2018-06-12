@@ -41,10 +41,11 @@ Simulation::Simulation(char const*const configFileName)
   cpu = new CPUSide(*system, *staticValues);
   cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
             totalSteps);
+    int thread_num = omp_get_thread_num();
+    cout << "A Thread num " << thread_num << endl;
   // GJS
-
   if (usingRE){
-      re = new barebones_Replica(omp_get_thread_num(), num_replicas, set.config.sys.T.inKelvin, staticValues->mol.count, replica_temps);
+      re = new barebones_Replica(thread_num, num_replicas, set.config.sys.T.inKelvin, staticValues->mol.count, replica_temps);
       re->init(set.config.sys.step.exchange, set.config.in.prng.seed); 
   }
   // GJS
@@ -65,6 +66,41 @@ Simulation::~Simulation()
   delete staticValues;
 }
 
+void Simulation::Init(Setup &set)
+{
+   //NOTE:
+   //IMPORTANT! Keep this order...
+   //as system depends on staticValues, and cpu sometimes depends on both.
+   //Setup set;
+   set.Init(set.config);
+   totalSteps = set.config.sys.step.total;
+   staticValues = new StaticVals(set);
+   system = new System(*staticValues);
+   staticValues->Init(set, *system); 
+   system->Init(set);
+   //recal Init for static value for initializing ewald since ewald is
+   //initialized in system
+   staticValues->InitOver(set, *system);
+   cpu = new CPUSide(*system, *staticValues);
+   cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
+             totalSteps);
+
+   //Dump combined PSF
+   PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap, 
+		    set.pdb.atoms.resKindNames);
+   psfOut.PrintPSF(set.config.out.state.files.psf.name);
+   std::cout << "Printed combined psf to file " 
+	     << set.config.out.state.files.psf.name << '\n';
+
+}
+
+
+Simulation::Simulation()
+{
+  cpu = nullptr;
+  system = nullptr;
+  staticValues = nullptr;
+}
 
 
 void Simulation::RunSimulation(void)
@@ -85,7 +121,7 @@ void Simulation::RunSimulation(void)
   //      std::cout << step <<"\n" << std::endl;
         //system->moveSettings.ExchangeMoves(step, re, system->potential.totalEnergy.total);
         if(system->moveSettings.ExchangeMoves(step))
-            re->replica_exchange(step, (system->calcEnergy.SystemTotal()).totalEnergy.total);
+            re->replica_exchange((system->calcEnergy.SystemTotal()).totalEnergy.total, step);
     }
 // GJS
     system->ChooseAndRunMove(step);
@@ -108,6 +144,17 @@ void Simulation::RunSimulation(void)
   }
   system->PrintTime();
 }
+
+void Simulation::RunSimulation(ulong step)
+{
+  system->ChooseAndRunMove(step);
+  cpu->Output(step);
+#ifndef NDEBUG
+  if ((step + 1) % 1000 == 0)
+    RunningCheck(step);
+#endif
+}
+
 
 #ifndef NDEBUG
 void Simulation::RunningCheck(const uint step)
