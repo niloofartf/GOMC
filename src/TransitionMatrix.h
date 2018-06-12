@@ -58,6 +58,8 @@ private:
   double boxVolume, temperature, vaporPressure, surfaceTension, vaporDensity, liquidDensity;
   int INITIAL_WEIGHTINGFUNCTION_VALUE;
   int vaporPeak, midpoint, liquidPeak;
+
+  int densityCoeff;						//For basic peak calculation in debugging; TODO: Remove after fixing/removing postprocessing
   
   uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 
 										//(Current implementation works with single component systems only)
@@ -67,6 +69,10 @@ private:
   int GetTMDelIndex(int numMolec);
   int GetTMEtcIndex(int numMolec);
   int GetTMInsIndex(int numMolec);
+  int FindVaporPeak(std::vector<double> weightingFunction);
+  int FindLiquidPeak(std::vector<double> weightingFunction, int maxMolecules);
+  int FindMiddle(std::vector<double> weightingFunction);
+
 
   std::vector<double> transitionMatrix;			  //Holds flat 2D Transition Matrix array after initialization
 
@@ -230,7 +236,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 	double oldAreaDif;
 	int oldVaporPeak, oldLiquidPeak, oldMidpoint;
 
-	double dChemPot = 0.5;
+	double dChemPot = 0.0001;
 	double change = 0.1;
 	vaporPeak = 0;
 	liquidPeak = 0;
@@ -265,29 +271,32 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		}
 
 		//Determine new peaks of vapor/liquid regions, midpoint (lowest point between peaks)
-		std::cout << "";
-		vaporPeak = 0;
-		for (int i = 0; i < midpoint; i++) {
-			if (newWeightingFunction[i] > newWeightingFunction[i+1]&& newWeightingFunction[i] > newWeightingFunction[i + 2] && newWeightingFunction[i] > newWeightingFunction[i + 3]) {
-				vaporPeak = i;
-			}
-			break;
-		}
-		std::cout << "";
-		liquidPeak = midpoint;
-		for (int i = midpoint; i < maxMolecules; i++) {
-			if (newWeightingFunction[i] > newWeightingFunction[liquidPeak]) {
-				liquidPeak = i;
-			}
-		}
-		std::cout << "";
-		midpoint = vaporPeak;
-		for (int i = vaporPeak; i < liquidPeak; i++) {
-			if (newWeightingFunction[i] < newWeightingFunction[midpoint]) {
-				midpoint = i;
-			}
-		}
-		std::cout << "";
+		
+		vaporPeak = FindVaporPeak(newWeightingFunction);
+			//0;
+		//for (int i = 0; i < midpoint; i++) {
+		//	if (newWeightingFunction[i] > newWeightingFunction[i+1]&& newWeightingFunction[i] > newWeightingFunction[i + 2] && newWeightingFunction[i] > newWeightingFunction[i + 3]) {
+		//		vaporPeak = i;
+		//	}
+		//	break;
+		//}
+		
+		liquidPeak = FindLiquidPeak(newWeightingFunction, maxMolecules);
+			//midpoint;
+		//for (int i = midpoint; i < maxMolecules; i++) {
+		//	if (newWeightingFunction[i] > newWeightingFunction[liquidPeak]) {
+		//		liquidPeak = i;
+		//	}
+		//}
+		
+		midpoint = FindMiddle(newWeightingFunction);
+			//vaporPeak;
+		//for (int i = vaporPeak; i < liquidPeak; i++) {
+		//	if (newWeightingFunction[i] < newWeightingFunction[midpoint]) {
+		//		midpoint = i;
+		//	}
+		//}
+		
 
 		//Determine new cutoff for max molecules (see: Errington 2003)
 		maxMolecules = liquidPeak;
@@ -307,6 +316,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
 	vaporDensity = InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
 	liquidDensity = InvAvogadrosNumTimesTenToTheThirtieth * liquidPeak / boxVolume;
+	densityCoeff = InvAvogadrosNumTimesTenToTheThirtieth / boxVolume;
 
 	//Vapor Pressure calculation
 	double sumFunction = 0.0;
@@ -322,4 +332,35 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 
 	return newWeightingFunction;
 }
+
+inline int TransitionMatrix::FindVaporPeak(std::vector<double> weightingFunction) {
+	int foundPeak = 0;
+	int i = 0;
+	while( i < weightingFunction.size() / 2 && (weightingFunction[i] < weightingFunction[i + 1] || weightingFunction[i] < weightingFunction[i + 2] || weightingFunction[i] < weightingFunction[i + 3])) {
+		i++;
+		foundPeak = i;
+	}
+	return foundPeak;
+}
+
+inline int TransitionMatrix::FindLiquidPeak(std::vector<double> weightingFunction, int maxMolecules) {
+	int foundPeak = maxMolecules;
+	int i = maxMolecules;
+	while (i > weightingFunction.size() / 2 && (weightingFunction[i] < weightingFunction[i - 1] || weightingFunction[i] < weightingFunction[i - 2] || weightingFunction[i] < weightingFunction[i - 3])) {
+		i--;
+		foundPeak = i;
+	}
+	return foundPeak;
+}
+
+inline int TransitionMatrix::FindMiddle(std::vector<double> weightingFunction) {
+	int foundMiddle = vaporPeak;
+	int i = vaporPeak;
+	while (i < liquidPeak && (weightingFunction[i] > weightingFunction[i + 1] || weightingFunction[i] > weightingFunction[i + 2] || weightingFunction[i] > weightingFunction[i + 3])) {
+		i++;
+		foundMiddle = i;
+	}
+	return foundMiddle;
+}
+
 #endif
