@@ -18,6 +18,7 @@ class Simulation
 {
 public:
 // GJS  
+  barebones_Replica* re;
   bool usingRE;
   std::vector<double> replica_temps;
   int num_replicas;
@@ -37,7 +38,6 @@ private:
   System * system;
   CPUSide * cpu;
   ulong totalSteps;
-  barebones_Replica* re;
 };
 
 #endif /*SIMULATION_H*/

@@ -1,9 +1,16 @@
+#include "System.h"
+
 #define KILO (1e3)
 #define AVOGADRO         (6.02214129e23)
 #define BOLTZMANN (1.3806488e-23)  /* (J/K, NIST 2010 CODATA */
 #define RGAS        (BOLTZMANN*AVOGADRO)   /* (J/(mol K))  */
 #define BOLTZ   (RGAS/KILO)    /* (kJ/(mol K)) */
-
+#define PROBABILITYCUTOFF 100
+#define BAR_MDUNITS      (1e5*NANO*PICO*PICO/AMU)
+#define PRESFAC          (1.0/BAR_MDUNITS)
+#define NANO             (1e-9)                            /* A Number  */
+#define PICO             (1e-12)                           /* A Number  */
+#define AMU              (1.660538921e-27)                 /* kg, NIST 2010 */
 
 class barebones_Replica {
 public:
@@ -11,7 +18,7 @@ public:
 enum {
     ereTEMP, erePRESSURE
 };
-
+//    System* theSystem;
     int       repl;        /* replica ID */
     int       nrepl;       /* total number of replica */
     float      temp;        /* temperature */
@@ -53,7 +60,10 @@ enum {
                         int nrepl,
                         float temp,
                         int natoms,
-                        std::vector<double> replica_temps) {
+                        std::vector<double> replica_temps){
+        
+//        this->theSystem = sys;
+
         // For now, since I'm assuming NVT
         this->bNPT = false;
 
@@ -154,7 +164,7 @@ enum {
     
     // if master thread
         replica_id = this->repl;
-        //test_for_replica_exchange(energy, uint step);
+        test_for_replica_exchange(energy, step);
         //prepare_to_do_exchange();
 
         if (bThisReplicaExchanged){
@@ -188,9 +198,10 @@ enum {
 
     static void exchange_state(int exchange_partner){}
     void scale_velocities(){}
-//    void test_for_replica_exchange(PRNG prng, float vol, const float energy){
-    //void test_for_replica_exchange(PRNG prng, const float energy){
     void test_for_replica_exchange(const float energy, uint step){
+
+        std::cout << "BATES I am replica number " << this->repl << "and my epot on step " << step << " is " << energy << std::endl;
+        return;
 
         int         m, i, j, a, b, ap, bp, i0, i1, tmp;
         float       delta   = 0.0;
@@ -228,7 +239,15 @@ enum {
 
         // endERETEMP
 
-        
+    
+        if (bVol) {
+            // broadcast volumes
+        }
+
+        if (bEpot) {
+            // broadcast pot eng
+        }
+    
         // Do some thread com to populate global arrays
 
         // SPACE HOLDER
@@ -236,22 +255,22 @@ enum {
         // SPACE HOLDER
 
         // Standard nearest neighbor replica exchange
-/*
+/**/
         m = (step / this->nst) % 2;
         for (i = 1; i < this->nrepl; i++)
         {
             a = this->ind[i-1];
             b = this->ind[i];
-
             bPrint = (this->repl == a || this->repl == b);
             if (i % 2 == m)
             {
-                delta = calc_delta(fplog, bPrint, re, a, b, a, b);
+                delta = calc_delta(a, b, a, b);
+                
                 if (delta <= 0)
                 {
                     // accepted 
                     prob[i] = 1;
-                    bEx[i]  = TRUE;
+                    bEx[i]  = true;
                 }
                 else
                 {
@@ -266,8 +285,10 @@ enum {
                     // roll a number to determine if accepted. For now it is superfluous to
                     // reset, but just in case we ever add more calls in different branches
                     // it is safer to always reset the distribution.
-                    uniformRealDist.reset();
-                    real randVar = uniformRealDist(rng);
+        //            uniformRealDist.reset();
+          //          real randVar = uniformRealDist(rng);
+                    // generate a random number
+                    double randVar = ((double) rand() / (RAND_MAX)) + 1;
                     bEx[i] = randVar < prob[i];
                 }
                 this->prob_sum[i] += prob[i];
@@ -284,25 +305,225 @@ enum {
             else
             {
                 prob[i] = -1;
-                bEx[i]  = FALSE;
+                bEx[i]  = false;
             }
         }
         // print some statistics 
-        print_ind(fplog, "ex", re->nrepl, re->ind, bEx);
-        print_prob(fplog, "pr", re->nrepl, prob);
-        fprintf(fplog, "\n");
+//        print_ind(fplog, "ex", this->nrepl, this->ind, bEx);
+  //      print_prob(fplog, "pr", this->nrepl, prob);
+    //    fprintf(fplog, "\n");
         this->nattempt[m]++;
-    }
 
     // record which moves were made and accepted 
-    for (i = 0; i < re->nrepl; i++)
+    for (i = 0; i < this->nrepl; i++)
     {
-        this->nmoves[re->ind[i]][pind[i]] += 1;
-        this->nmoves[pind[i]][re->ind[i]] += 1;
+        this->nmoves[this->ind[i]][pind[i]] += 1;
+        this->nmoves[pind[i]][this->ind[i]] += 1;
     }
-    fflush(fplog); // make sure we can see what the last exchange was 
-        */
+//    fflush(fplog); // make sure we can see what the last exchange was 
     }
-    void prepare_to_do_exchange(){}
-    double calc_delta(){}
+    void prepare_to_do_exchange(    const int           replica_id,
+                                    int                *maxswap,
+                                    bool           *bThisReplicaExchanged){
+
+        int i, j;
+        /* Hold the cyclic decomposition of the (multiple) replica
+         * exchange. */
+        bool bAnyReplicaExchanged = false;
+        *bThisReplicaExchanged = false;
+
+        for (i = 0; i < this->nrepl; i++)
+        {
+            if (this->destinations[i] != this->ind[i])
+            {
+                /* only mark as exchanged if the index has been shuffled */
+                bAnyReplicaExchanged = true;
+                break;
+            }
+        }
+        if (bAnyReplicaExchanged)
+        {
+            /* reinitialize the placeholder arrays */
+            for (i = 0; i < this->nrepl; i++)
+            {
+                for (j = 0; j < this->nrepl; j++)
+                {
+                    this->cyclic[i][j] = -1;
+                    this->order[i][j]  = -1;
+                }
+            }
+
+            /* Identify the cyclic decomposition of the permutation (very
+             * fast if neighbor replica exchange). */
+            cyclic_decomposition(this->destinations, this->cyclic, this->incycle, this->nrepl, maxswap);
+
+            /* Now translate the decomposition into a replica exchange
+             * order at each step. */
+            compute_exchange_order(this->cyclic, this->order, this->nrepl, *maxswap);
+
+            /* Did this replica do any exchange at any point? */
+            for (j = 0; j < *maxswap; j++)
+            {
+                if (replica_id != this->order[replica_id][j])
+                {
+                    *bThisReplicaExchanged = true;
+                    break;
+                }
+            }
+        }
+
+    }
+
+    double calc_delta(int a, int b, int ap, int bp){
+
+        float   ediff, dpV, delta = 0;
+        float  *Epot = this->Epot;
+        float  *Vol  = this->Vol;
+        float **de   = this->de;
+        float  *beta = this->beta;
+
+        /* Two cases; we are permuted and not.  In all cases, setting ap = a and bp = b will reduce
+           to the non permuted case */
+
+        /*
+         * Okabe et. al. Chem. Phys. Lett. 335 (2001) 435-439
+         */
+       
+        ediff = Epot[b] - Epot[a];
+        delta = -(beta[bp] - beta[ap])*ediff;
+       
+        // remove this boolean later - GJS 
+        bool bPrint = true;
+        if (bPrint)
+        {
+        //    fprintf(fplog, "Repl %d <-> %d  dE_term = %10.3e (kT)\n", a, b, delta);
+        }
+        if (this->bNPT)
+        {
+            /* revist the calculation for 5.0.  Might be some improvements. */
+            dpV = (beta[ap]*this->pres[ap]-beta[bp]*this->pres[bp])*(Vol[b]-Vol[a])/PRESFAC;
+            if (bPrint)
+            {
+          //      fprintf(fplog, "  dpV = %10.3e  d = %10.3e\n", dpV, delta + dpV);
+            }
+            delta += dpV;
+        }
+        return delta;
+    }
+
+    static void
+    cyclic_decomposition(const int *destinations,
+                         int      **cyclic,
+                         bool  *incycle,
+                         const int  nrepl,
+                         int       *nswap)
+    {
+
+        int i, j, c, p;
+        int maxlen = 1;
+        for (i = 0; i < nrepl; i++)
+        {
+            incycle[i] = false;
+        }
+        for (i = 0; i < nrepl; i++)  /* one cycle for each replica */
+        {
+            if (incycle[i])
+            {
+                cyclic[i][0] = -1;
+                continue;
+            }
+            cyclic[i][0] = i;
+            incycle[i]   = true;
+            c            = 1;
+            p            = i;
+            for (j = 0; j < nrepl; j++) /* potentially all cycles are part, but we will break first */
+            {
+                p = destinations[p];    /* start permuting */
+                if (p == i)
+                {
+                    cyclic[i][c] = -1;
+                    if (c > maxlen)
+                    {
+                        maxlen = c;
+                    }
+                    break; /* we've reached the original element, the cycle is complete, and we marked the end. */
+                }
+                else
+                {
+                    cyclic[i][c] = p;  /* each permutation gives a new member of the cycle */
+                    incycle[p]   = true;
+                    c++;
+                }
+            }
+        }
+        *nswap = maxlen - 1;
+        // remove this boolean later - GJS
+        bool debug = true;
+        if (debug)
+        {
+                for (i = 0; i < nrepl; i++)
+                {
+            //        fprintf(debug, "Cycle %d:", i);
+                    for (j = 0; j < nrepl; j++)
+                    {
+                        if (cyclic[i][j] < 0)
+                        {
+                            break;
+                        }
+                        //fprintf(debug, "%2d", cyclic[i][j]);
+                    }
+                    //fprintf(debug, "\n");
+                }
+                //fflush(debug);
+        }
+    }
+
+    static void
+    compute_exchange_order(int     **cyclic,
+                           int     **order,
+                           const int nrepl,
+                           const int maxswap)
+    {
+        int i, j;
+
+        for (j = 0; j < maxswap; j++)
+        {
+            for (i = 0; i < nrepl; i++)
+            {
+                if (cyclic[i][j+1] >= 0)
+                {
+                    order[cyclic[i][j+1]][j] = cyclic[i][j];
+                    order[cyclic[i][j]][j]   = cyclic[i][j+1];
+                }
+            }
+            for (i = 0; i < nrepl; i++)
+            {
+                if (order[i][j] < 0)
+                {
+                    order[i][j] = i; /* if it's not exchanging, it should stay this round*/
+                }
+            }
+        }
+/*
+           if (debug)
+            {
+                fprintf(debug, "Replica Exchange Order\n");
+                for (i = 0; i < nrepl; i++)
+                {
+                    fprintf(debug, "Replica %d:", i);
+                    for (j = 0; j < maxswap; j++)
+                    {
+                        if (order[i][j] < 0)
+                        {
+                            break;
+                        }
+                        fprintf(debug, "%2d", order[i][j]);
+                    }
+                    fprintf(debug, "\n");
+                }
+                fflush(debug);
+            } */
+    }
+
+
 };

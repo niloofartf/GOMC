@@ -38,7 +38,8 @@ public:
   void AdjustMoves(const uint step);
 
 // GJS
-  void ExchangeMoves(const uint step, barebones_Replica* re, const float energy);
+  //void ExchangeMoves(const uint step, barebones_Replica* re, const float energy);
+  bool ExchangeMoves(const uint step);
   void Exchange(barebones_Replica* re, const float energy, uint step);
 // GJS
 

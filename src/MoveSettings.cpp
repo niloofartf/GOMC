@@ -146,15 +146,26 @@ void MoveSettings::Adjust(const uint majMoveKind,
 }
 
 // GJS
-void MoveSettings::ExchangeMoves(const uint step, barebones_Replica* re, const float energy)
+/*void MoveSettings::ExchangeMoves(const uint step, barebones_Replica* re, const float energy)
 {
   //Check whether or not to attempt exchange.
     if ((step + 1) % perExchange == 0) {
       Exchange(re, energy, step);
     }
+}*/
+
+// GJS
+bool MoveSettings::ExchangeMoves(const uint step)
+{
+  //Check whether or not to attempt exchange.
+    if ((step + 1) % perExchange == 0) {
+      return true;
+    }
+    return false;
 }
 
 void MoveSettings::Exchange(barebones_Replica* re, const float energy, uint step){ 
+        std::cout << "Im about to call replica_exchange\n" << std::endl;
         re->replica_exchange(energy, step);
 }
 // GJS

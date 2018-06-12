@@ -77,12 +77,16 @@ void Simulation::RunSimulation(void)
   for (ulong step = 0; step < totalSteps; step++) {
     system->moveSettings.AdjustMoves(step);
 // GJS
-    if (usingRE)
+    if (usingRE) {
         // GJS
         // This epot is either : 1) old , 2) expensive to calculate
         // I need to align the exchange frequency with the potential calc freq
         // GJS
-        system->moveSettings.ExchangeMoves(step, re, system->potential.totalEnergy.total);
+  //      std::cout << step <<"\n" << std::endl;
+        //system->moveSettings.ExchangeMoves(step, re, system->potential.totalEnergy.total);
+        if(system->moveSettings.ExchangeMoves(step))
+            re->replica_exchange(step, (system->calcEnergy.SystemTotal()).totalEnergy.total);
+    }
 // GJS
     system->ChooseAndRunMove(step);
     cpu->Output(step);
