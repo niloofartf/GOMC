@@ -4,7 +4,12 @@ Copyright (C) 2018  GOMC Group
 A copy of the GNU General Public License can be found in the COPYRIGHT.txt
 along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
+#ifdef _OPENMP
 #include <omp.h>
+#else
+#define omp_get_thread_num() 0
+#endif
+
 #include "Simulation.h"
 #include "GOMC_Config.h"    //For version number
 #ifdef GOMC_CUDA
@@ -16,6 +21,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <thread>
 #include <sstream>
 #include <list>
+#include "barebones_Replica.cpp"
 // GJS
 
 //find and include appropriate files for getHostname
@@ -111,34 +117,39 @@ int main(int argc, char *argv[])
 
       //read config file
       Setup set;
-      set.ReadConf(inputFileString.c_str());
+     set.ReadConf(inputFileString.c_str());
       ulong totalSteps = set.config.sys.step.total;
       std::string uniqueName = set.config.out.statistics.settings.uniqueStr.val;
-      int numReplica = set.config.sys.T.replica_temps.size();
+      int numReplica = set.config.sys.T.tempReplica.size();
       Simulation *sim = new Simulation[numReplica];
 
       for(int i = 0; i < numReplica; i++)
       {
             //set the temperature of the system for each replica
-            set.config.sys.T.inKelvin = set.config.sys.T.replica_temps[i];
-            //set the unique name for ach replica
+            set.config.sys.T.inKelvin = set.config.sys.T.tempReplica[i];
+            //set the unique name for each replica
             std::stringstream ss;
-            ss << set.config.sys.T.replica_temps[i];
+            ss << set.config.sys.T.tempReplica[i];
             set.config.out.statistics.settings.uniqueStr.val = uniqueName
               + "_" + ss.str();
 	        //initialize all classes with new setup file
 	        sim[i].Init(set);
       }
 
-      for (ulong step = 0; step < totalSteps; step++)
+    barebones_Replica re(sim, set.config.sys.T.tempReplica);  
+    //re.init(set.config.sys.step.exchange, set.config.in.prng.seed);
+    for (ulong step = 0; step < totalSteps; step = step+set.config.sys.step.exchange)
       {
-	    #pragma omp paralell for shared(sim) private(i)
-        for(int i = 0; i < numReplica; i++)
+        int i;
+	    #pragma omp parallel for default(none) schedule(static,1) private(i, step) \
+            shared(numReplica, sim) 
+        for( i = 0; i < numReplica; i++)
 	    {
-	        sim[i].RunSimulation(step);
+	        // This will break after performing N steps
+            // where N = the exchange interval
+            sim[i].RunSimulation(step);
 	    }
-        //if (step + 1 % exhINT)
-        //    #omp barrier
+        re.replica_exchange(step);
         //    replica_exchange();
       }
   }  

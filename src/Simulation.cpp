@@ -7,7 +7,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "Simulation.h"
 #include "Setup.h"          //For setup object
 // GJS
-#include "barebones_Replica.cpp"
+//#include "barebones_Replica.cpp"
 // GJS
 
 #include "EnergyTypes.h"
@@ -21,15 +21,9 @@ Simulation::Simulation(char const*const configFileName)
   //NOTE:
   //IMPORTANT! Keep this order...
   //as system depends on staticValues, and cpu sometimes depends on both.
-  barebones_Replica* re;
 
   Setup set;
   set.Init(configFileName);
-// GJS
-  usingRE = set.config.sys.usingRE;
-  replica_temps = set.config.sys.T.replica_temps;
-  num_replicas = replica_temps.size(); 
-// GJS
   totalSteps = set.config.sys.step.total;
   staticValues = new StaticVals(set);
   system = new System(*staticValues);
@@ -41,15 +35,6 @@ Simulation::Simulation(char const*const configFileName)
   cpu = new CPUSide(*system, *staticValues);
   cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
             totalSteps);
-    int thread_num = omp_get_thread_num();
-    cout << "A Thread num " << thread_num << endl;
-  // GJS
-  if (usingRE){
-      re = new barebones_Replica(thread_num, num_replicas, set.config.sys.T.inKelvin, staticValues->mol.count, replica_temps);
-      re->init(set.config.sys.step.exchange, set.config.in.prng.seed); 
-  }
-  // GJS
-
   //Dump combined PSF
   PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap,
                    set.pdb.atoms.resKindNames);
@@ -105,25 +90,10 @@ Simulation::Simulation()
 
 void Simulation::RunSimulation(void)
 {
-// GJS
 
-  std::cout << "GJS" << omp_get_thread_num() << std::endl;
-// GJS
   double startEnergy = system->potential.totalEnergy.total;
   for (ulong step = 0; step < totalSteps; step++) {
     system->moveSettings.AdjustMoves(step);
-// GJS
-    if (usingRE) {
-        // GJS
-        // This epot is either : 1) old , 2) expensive to calculate
-        // I need to align the exchange frequency with the potential calc freq
-        // GJS
-  //      std::cout << step <<"\n" << std::endl;
-        //system->moveSettings.ExchangeMoves(step, re, system->potential.totalEnergy.total);
-        if(system->moveSettings.ExchangeMoves(step))
-            re->replica_exchange((system->calcEnergy.SystemTotal()).totalEnergy.total, step);
-    }
-// GJS
     system->ChooseAndRunMove(step);
     cpu->Output(step);
 
@@ -147,12 +117,17 @@ void Simulation::RunSimulation(void)
 
 void Simulation::RunSimulation(ulong step)
 {
-  system->ChooseAndRunMove(step);
-  cpu->Output(step);
-#ifndef NDEBUG
-  if ((step + 1) % 1000 == 0)
-    RunningCheck(step);
-#endif
+  int step_count = step;
+  while(step_count % system->moveSettings.perExchange != 0){ 
+    system->ChooseAndRunMove(step_count);
+    cpu->Output(step_count);
+    #ifndef NDEBUG
+    if ((step_count + 1) % 1000 == 0)
+        RunningCheck(step_count);
+    #endif
+    step_count++;
+  }
+  system->calcEnergy.SystemTotal();
 }
 
 

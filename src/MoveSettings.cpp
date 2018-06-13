@@ -10,7 +10,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "StaticVals.h" //For init info.
 
 // GJS
-#include "barebones_Replica.cpp"
+//#include "barebones_Replica.cpp"
 // GJS
 
 #include "NumLib.h" //For bounding functions.
@@ -164,8 +164,3 @@ bool MoveSettings::ExchangeMoves(const uint step)
     return false;
 }
 
-void MoveSettings::Exchange(barebones_Replica* re, const float energy, uint step){ 
-        std::cout << "Im about to call replica_exchange\n" << std::endl;
-        re->replica_exchange(energy, step);
-}
-// GJS

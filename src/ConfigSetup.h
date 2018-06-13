@@ -110,7 +110,7 @@ struct Temperature {
   double inKelvin;
 
 // GJS
-  std::vector<double> replica_temps;
+  std::vector<double> tempReplica;
 // GJS
 };
 

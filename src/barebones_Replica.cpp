@@ -20,10 +20,9 @@ enum {
     ereTEMP, erePRESSURE
 };
 //    System* theSystem;
-    int       repl;        /* replica ID */
     int       nrepl;       /* total number of replica */
+    Simulation* sim;
     float      temp;        /* temperature */
-    int      numAtomsInSystem;        /* natoms */
 
     int i, j, k;
     
@@ -57,23 +56,17 @@ enum {
     float  *Vol;
     float **de;
     
-    barebones_Replica(  int repl,
-                        int nrepl,
-                        float temp,
-                        int natoms,
-                        std::vector<double> replica_temps){
+    barebones_Replica(  Simulation* sim_array, 
+                        std::vector<double> tempReplica){
         
-//        this->theSystem = sys;
+        this->sim = sim_array;
 
         // For now, since I'm assuming NVT
         this->bNPT = false;
 
-        this->replica_temps = replica_temps;
+        this->replica_temps = tempReplica;
 
-        this->repl = repl;
-        this->nrepl = nrepl;
-        this->temp = temp;
-        this->numAtomsInSystem = natoms;
+        this->nrepl = tempReplica.size();
     }
 
     void init(int   exchangeInterval,
@@ -148,8 +141,7 @@ enum {
 
     }
 
-    //bool replica_exchange(const float energy, PRNG prng, float vol){
-    bool replica_exchange(const float energy, uint step){
+    bool replica_exchange(uint step){
 
         int j;
         int replica_id = 0;
@@ -163,12 +155,7 @@ enum {
     bool bThisReplicaExchanged = false;
 
     
-    // if master thread
-        replica_id = this->repl;
-       
-        cout << "in replica_exchange, this->repl : " << replica_id << " " << endl;
-
-         test_for_replica_exchange(energy, step);
+    test_for_replica_exchange(step);
         //prepare_to_do_exchange();
 
         if (bThisReplicaExchanged){
@@ -202,10 +189,8 @@ enum {
 
     static void exchange_state(int exchange_partner){}
     void scale_velocities(){}
-    void test_for_replica_exchange(const float energy, uint step){
+    void test_for_replica_exchange(uint step){
 
-        std::cout << "BATES I am replica number " << this->repl << "and my epot on step " << step << " is " << energy << std::endl;
-        return;
 
         int         m, i, j, a, b, ap, bp, i0, i1, tmp;
         float       delta   = 0.0;
@@ -235,8 +220,8 @@ enum {
 
         bEpot   = true;
 
-        this->Epot[this->repl] = energy; //  POTENTIAL ENERGY
-        
+//      Loop through the sims and assign their energies to a local array
+       
         for (i = 0; i < this->nrepl; i++) {
             this->beta[i] = 1.0/(replica_temps[i]*BOLTZ);
         }
@@ -265,7 +250,10 @@ enum {
         {
             a = this->ind[i-1];
             b = this->ind[i];
-            bPrint = (this->repl == a || this->repl == b);
+//            This is one of the reasons for having a re object for every replica
+//              You can tie printing to each object and only print stats from your own replica
+//                  For now, I will print a file with all the replicas stats in it
+//            bPrint = (this->repl == a || this->repl == b);
             if (i % 2 == m)
             {
                 delta = calc_delta(a, b, a, b);
@@ -326,6 +314,8 @@ enum {
     }
 //    fflush(fplog); // make sure we can see what the last exchange was 
     }
+
+
     void prepare_to_do_exchange(    const int           replica_id,
                                     int                *maxswap,
                                     bool           *bThisReplicaExchanged){

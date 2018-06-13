@@ -232,30 +232,16 @@ void ConfigSetup::Init(const char *fileName)
     }
 #endif
     else if(line[0] == "Temperature") {
-// GJS
-        if (line.size() == 2 ){
-
-            sys.T.inKelvin = stringtod(line[1]);
-            printf("%-40s %-4.4f K\n", "Info: Input Temperature", sys.T.inKelvin);
-
-        } else {
-
-            sys.usingRE = true; 
-            std::vector<double> replica_temps;
-
-            for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
-                replica_temps.push_back(stringtod(*itr));
-            }
-            
-            sys.T.inKelvin = replica_temps[omp_get_thread_num()];
-            sys.T.replica_temps = replica_temps;
-            printf("\n");
-            printf("%-40s ", "Info: Input Temperature");
-            printf(" %-4.4f K", sys.T.inKelvin);
-            
-        }
-// GJS
- 
+      sys.T.inKelvin = stringtod(line[1]);
+      std::cout<< "Temperature of system has been set to " << sys.T.inKelvin << " K " << std::endl;
+    }
+    else if(line[0] == "TempReplica")
+    {
+      for(int i = 1; i < line.size(); i++)
+      {
+	sys.T.tempReplica.push_back(stringtod(line[i]));
+	std::cout<< "Temperature of replica " << i - 1 << "  has been set to " << sys.T.tempReplica[i - 1] << " K " << std::endl;
+      }
     } else if(line[0] == "Potential") {
       if(line[1] == "VDW") {
         sys.ff.VDW_KIND = sys.ff.VDW_STD_KIND;
@@ -491,16 +477,9 @@ void ConfigSetup::Init(const char *fileName)
              val);
     }
 #endif
+// GJS
     else if(line[0] == "OutputName") {
-        if (sys.usingRE){
-            out.statistics.settings.uniqueStr.val = line[1];
-            out.statistics.settings.uniqueStr.val += std::to_string((int)sys.T.replica_temps[omp_get_thread_num()]); 
-            out.statistics.settings.uniqueStr.val += "K"; 
-            printf("%-40s %-s \n", "Info: Output name", line[1].c_str());
-        } else {
-            out.statistics.settings.uniqueStr.val = line[1];
-            printf("%-40s %-s \n", "Info: Output name", line[1].c_str());
-        }
+      out.statistics.settings.uniqueStr.val = line[1];
     } else if(line[0] == "CoordinatesFreq") {
       out.state.settings.enable = checkBool(line[1]);
       if(line.size() == 3)
@@ -816,12 +795,10 @@ void ConfigSetup::verifyInputs(void)
     std::cout << "Error: Move adjustment frequency is not specified!\n";
     exit(EXIT_FAILURE);
   }
-// GJS
-  if(sys.step.exchange == ULONG_MAX && sys.T.replica_temps.size() > 1) {
-    std::cout << "Error: Replica exchange frequency is not specified, but more than one temperature is provided!\n";
+  if (sys.step.exchange == ULONG_MAX && sys.T.tempReplica.size() > 1){
+    std::cout << "Error: Replica Exchange Frequency not specified!\n";
     exit(EXIT_FAILURE);
-  }
-// GJS
+    }
   if(sys.step.equil == ULONG_MAX) {
     std::cout << "Error: Equilibration steps is not specified!\n";
     exit(EXIT_FAILURE);
@@ -1091,3 +1068,5 @@ const uint config_setup::FFValues::VDW_STD_KIND = 0,
                                                                                    config_setup::Exclude::EXC_ONETWO_KIND = 0,
                                                                                                           config_setup::Exclude::EXC_ONETHREE_KIND = 1,
                                                                                                                                  config_setup::Exclude::EXC_ONEFOUR_KIND = 2;
+
+

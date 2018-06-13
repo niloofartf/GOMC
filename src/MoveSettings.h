@@ -40,7 +40,7 @@ public:
 // GJS
   //void ExchangeMoves(const uint step, barebones_Replica* re, const float energy);
   bool ExchangeMoves(const uint step);
-  void Exchange(barebones_Replica* re, const float energy, uint step);
+  //void Exchange(barebones_Replica* re, const float energy, uint step);
 // GJS
 
   void Adjust(const uint majMoveKind, const uint moveIndex, const uint b);
@@ -49,6 +49,7 @@ public:
   {
     return scale[move];
   }
+  uint perExchange;
 
 private:
   double scale[mv::SCALEABLE];
@@ -57,7 +58,6 @@ private:
   uint tries[mv::COUNT];
   uint perAdjust;
 // GJS
-  uint perExchange;
 // GJS
   uint tempAccepted[mv::SCALEABLE], tempTries[mv::SCALEABLE];
 
