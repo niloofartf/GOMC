@@ -271,7 +271,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		//Determine new peaks of vapor/liquid regions, midpoint (lowest point between peaks)
 		vaporPeak = 0;
 		for (int i = 0; i < midpoint; i++) {
-			if (newWeightingFunction[i] > newWeightingFunction[vaporPeak] {
+			if (newWeightingFunction[i] > newWeightingFunction[vaporPeak]) {
 				vaporPeak = i;
 			}
 		}
@@ -342,11 +342,11 @@ inline double TransitionMatrix::CalculateLiquidDensity(int liquidPeak, double bo
 
 inline double TransitionMatrix::CalculateVaporPressure(std::vector<double> weightingFunction, double temperature, double boxVolume) {
 	double sumFunction = 0.0;
-	for (int i = 0; i < maxMolecules; i++) {
+	for (int i = 0; i < weightingFunction.size(); i++) {
 		sumFunction += weightingFunction[i];
 	}
 	double KBTimesTenToTheThirtieth = 13806485.2;			//Boltzmann constant times 10^30 (box volume from cubic angstroms to cubic meters)
-	vaporPressure = (log(sumFunction) - log(weightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
+	return (log(sumFunction) - log(weightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
 }
 
 inline double TransitionMatrix::CalculateSurfaceTension(std::vector<double> weightingFunction, int liquidPeak, int vaporPeak, int midpoint, double temperature, double boxVolume) {
