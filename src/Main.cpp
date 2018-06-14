@@ -116,41 +116,47 @@ int main(int argc, char *argv[])
     inputFileReader.close();
 
       //read config file
-      Setup set;
-     set.ReadConf(inputFileString.c_str());
-      ulong totalSteps = set.config.sys.step.total;
-      std::string uniqueName = set.config.out.statistics.settings.uniqueStr.val;
-      int numReplica = set.config.sys.T.tempReplica.size();
-      Simulation *sim = new Simulation[numReplica];
+      Setup setter;
+      setter.ReadConf(inputFileString.c_str());
+      ulong totalSteps = setter.config.sys.step.total;
+      std::string uniqueName = setter.config.out.statistics.settings.uniqueStr.val;
+      int numReplica = setter.config.sys.T.tempReplica.size();
+
+      Setup      set[numReplica];
+      Simulation sim[numReplica];
 
       for(int i = 0; i < numReplica; i++)
       {
             //set the temperature of the system for each replica
-            set.config.sys.T.inKelvin = set.config.sys.T.tempReplica[i];
+            set[i].ReadConf(inputFileString.c_str());
+            set[i].config.sys.T.inKelvin = setter.config.sys.T.tempReplica[i];
             //set the unique name for each replica
             std::stringstream ss;
-            ss << set.config.sys.T.tempReplica[i];
-            set.config.out.statistics.settings.uniqueStr.val = uniqueName
+            ss << setter.config.sys.T.tempReplica[i];
+            set[i].config.out.statistics.settings.uniqueStr.val = uniqueName
               + "_" + ss.str();
 	        //initialize all classes with new setup file
-	        sim[i].Init(set);
+	        sim[i].Init(set[i]);
       }
 
-    barebones_Replica re(sim, set.config.sys.T.tempReplica);  
-    //re.init(set.config.sys.step.exchange, set.config.in.prng.seed);
-    for (ulong step = 0; step < totalSteps; step = step+set.config.sys.step.exchange)
+//    barebones_Replica re(sim, set.config.sys.T.tempReplica);  
+    // Hard code 2nd arg, a seed.  Still trying to figure out 
+    // How to get the prng seed in there
+  //  re.init(set.config.sys.step.exchange, 1234);
+    //for (ulong step = 0; step < totalSteps; step = step+setter.config.sys.step.exchange)
+    for (ulong step = 0; step < totalSteps; step++)
       {
         int i;
-	    #pragma omp parallel for default(none) schedule(static,1) private(i, step) \
-            shared(numReplica, sim) 
-        for( i = 0; i < numReplica; i++)
+//        #pragma omp parallel for default(none) schedule(static,1) private(i, step) \
+//            shared(numReplica, sim) 
+      for(int i = 0; i < numReplica; i++)
 	    {
 	        // This will break after performing N steps
             // where N = the exchange interval
             sim[i].RunSimulation(step);
+            printf("I am replica %d and my epot is %f\n", i, sim[i].getPotEng());        
 	    }
-        re.replica_exchange(step);
-        //    replica_exchange();
+    //    re.replica_exchange(step);
       }
   }  
   return 0;

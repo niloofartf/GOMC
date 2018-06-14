@@ -30,6 +30,7 @@ public:
 
   void RunSimulation(void);
   void RunSimulation(ulong step);
+  double getPotEng(void);
 
 
 #ifndef NDEBUG

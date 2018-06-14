@@ -44,6 +44,14 @@ Simulation::Simulation(char const*const configFileName)
 
 }
 
+Simulation::Simulation()
+{
+  cpu = nullptr;
+  system = nullptr;
+  staticValues = nullptr;
+}
+
+
 Simulation::~Simulation()
 {
   delete cpu;
@@ -80,14 +88,6 @@ void Simulation::Init(Setup &set)
 }
 
 
-Simulation::Simulation()
-{
-  cpu = nullptr;
-  system = nullptr;
-  staticValues = nullptr;
-}
-
-
 void Simulation::RunSimulation(void)
 {
 
@@ -117,19 +117,42 @@ void Simulation::RunSimulation(void)
 
 void Simulation::RunSimulation(ulong step)
 {
-  int step_count = step;
-  while(step_count % system->moveSettings.perExchange != 0){ 
-    system->ChooseAndRunMove(step_count);
-    cpu->Output(step_count);
+  
+  //printf("Step : %d, energy : %f", (int)step, startEnergy);  
+  double startEnergy = system->potential.totalEnergy.total;
+//    int step_count = step;
+//  while(step_count % system->moveSettings.perExchange != 0){ 
+    system->potential = system->calcEnergy.SystemTotal();
+    printf("energy : %f\n", startEnergy);
+    system->moveSettings.AdjustMoves(step);
+    system->ChooseAndRunMove(step);
+    cpu->Output(step);
+    
+    if((step + 1) == cpu->equilSteps) {
+      double currEnergy = system->potential.totalEnergy.total;
+      if(abs(currEnergy - startEnergy) > 1.0e+10) {
+        printf("Info: Performing total energy calculation to preserve the"
+               " energy information.\n\n");
+        system->calcEwald->Init();
+        system->potential = system->calcEnergy.SystemTotal();
+      }
+    }
+    
     #ifndef NDEBUG
-    if ((step_count + 1) % 1000 == 0)
+    if ((step + 1) % 1000 == 0)
         RunningCheck(step_count);
     #endif
-    step_count++;
-  }
-  system->calcEnergy.SystemTotal();
+   // step_count++;
+ // }
+  // May be unneccessary GJS
+  //system->potential = system->calcEnergy.SystemTotal();
 }
 
+double Simulation::getPotEng(void) {
+    double currEnergy = system->potential.totalEnergy.total;
+    return currEnergy;
+
+}
 
 #ifndef NDEBUG
 void Simulation::RunningCheck(const uint step)

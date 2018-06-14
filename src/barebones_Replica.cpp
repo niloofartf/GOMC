@@ -152,38 +152,45 @@ enum {
         * exchanges. */
         /* Where each replica ends up after the exchange attempt(s). */
         /* The order in which multiple exchanges will occur. */
-    bool bThisReplicaExchanged = false;
+        bool bThisReplicaExchanged = false;
 
-    
-    test_for_replica_exchange(step);
-        //prepare_to_do_exchange();
+        test_for_replica_exchange(step);
 
-        if (bThisReplicaExchanged){
-    
-            /* There will be only one swap cycle with standard replica
-             * exchange, but there may be multiple swap cycles if we
-             * allow multiple swaps. */
+        // Is this a valid way to do things???
 
-            for (j = 0; j < maxswap; j++)
-            {
-                exchange_partner = this->order[replica_id][j];
+        for ( int replica_id = 0; replica_id < this->nrepl; replica_id++ ) {
+        
+            bThisReplicaExchanged = false;
+        
+            prepare_to_do_exchange(replica_id, &maxswap, &bThisReplicaExchanged);
 
-                if (exchange_partner != replica_id)
+            if (bThisReplicaExchanged){
+        
+                /* There will be only one swap cycle with standard replica
+                 * exchange, but there may be multiple swap cycles if we
+                 * allow multiple swaps. */
+
+                for (j = 0; j < maxswap; j++)
                 {
-                    bool debug = true;
-                    /* Exchange the global states between the master nodes */
-                    if (debug)
-                    {
-                        printf("Exchanging %d with %d\n", replica_id, exchange_partner);
-                    }
-                    exchange_state(exchange_partner);
-                }
-            }
-            /* For temperature-type replica exchange, we need to scale
-             * the velocities. */
-                scale_velocities();
+                    exchange_partner = this->order[replica_id][j];
 
- 
+                    if (exchange_partner != replica_id)
+                    {
+                        bool debug = true;
+                        /* Exchange the global states between the master nodes */
+                        if (debug)
+                        {
+                            printf("Exchanging %d with %d\n", replica_id, exchange_partner);
+                        }
+                        exchange_state(exchange_partner);
+                    }
+                }
+                /* For temperature-type replica exchange, we need to scale
+                 * the velocities. */
+                    scale_velocities();
+
+     
+            }
         }
     }
 
@@ -213,12 +220,20 @@ enum {
 //            this->Vol[this->repl] = vol;
         }
 
+        bEpot   = true;
         // ereTEMP
         for (i = 0; i < this->nrepl; i++){
-            this->Epot[i] = 0.0;
+            printf("Replica %d : Epot : %f", i, this->sim[i].getPotEng());
+            this->Epot[i] = (double)this->sim[i].getPotEng();
         }
 
-        bEpot   = true;
+        /* make a duplicate set of indices for shuffling */
+        for (i = 0; i < this->nrepl; i++) {
+            pind[i] = this->ind[i];
+        }
+
+
+
 
 //      Loop through the sims and assign their energies to a local array
        
@@ -316,7 +331,7 @@ enum {
     }
 
 
-    void prepare_to_do_exchange(    const int           replica_id,
+    void prepare_to_do_exchange(    int             replica_id, 
                                     int                *maxswap,
                                     bool           *bThisReplicaExchanged){
 
