@@ -69,9 +69,11 @@ private:
   int GetTMDelIndex(int numMolec);
   int GetTMEtcIndex(int numMolec);
   int GetTMInsIndex(int numMolec);
-  int FindVaporPeak(std::vector<double> weightingFunction);
-  int FindLiquidPeak(std::vector<double> weightingFunction, int maxMolecules);
-  int FindMiddle(std::vector<double> weightingFunction);
+  
+  double CalculateVaporDensity(int vaporPeak, double boxVolume)
+  double CalculateLiquidDensity(int liquidPeak, double boxVolume);
+  double CalculateVaporPressure(std::vector<double> weightingFunction, double temperature, double boxVolume);
+  double CalculateSurfaceTension(std::vector<double> weightingFunction, int liquidPeak, int vaporPeak, int midpoint, double temperature, double boxVolume);
 
 
   std::vector<double> transitionMatrix;			  //Holds flat 2D Transition Matrix array after initialization
@@ -204,10 +206,11 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	std::cout << weightingFunction[weightingFunction.size() - 1] << "\n";
 	
 	std::cout << "\nVapor peak: " << vaporPeak << "; midpoint: " << midpoint << "; liquid peak: " << liquidPeak;
-	std::cout << "\nVapor density: " << vaporDensity << " (mol/m3); Liquid peak: " << liquidDensity << " (mol/m3)";
-	std::cout << "\nDensity Coeff (multiply number density by this if reweight debug required): " << densityCoeff;
-	std::cout << "\nVapor pressure: " << vaporPressure << " (Pa)";
-	std::cout << "\nBox Length (assumes cubic box): " << pow(boxVolume,1/3.0) << " (ang); Surface Tension: " << surfaceTension << " (N/m)\n";
+	std::cout << "\nVapor density: " << CalculateVaporPeak(vaporPeak, boxVolume) << " (mol/m3); Liquid peak: " << CalculateLiquidDensity(int liquidPeak, double boxVolume) << " (mol/m3)";
+	std::cout << "\nVapor pressure: " << CalculateVaporPressure(weightingFunction, temperature, boxVolume) << " (Pa)";
+	std::cout << "\nSurface Tension: " << CalculateSurfaceTension(weightingFunction, liquidPeak, vaporPeak, midpoint, temperature, boxVolume) << " (N/m)";
+	std::cout << "\nBox Length(assumes cubic box) : " << pow(boxVolume, 1 / 3.0) << " (ang) \n";
+	std::cout << "\nDensity Coeff (multiply number density by this if reweight debug required): " << 1660539.04 / boxVolume;
 }
 
 inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
@@ -302,27 +305,54 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 	} while (processLoopCount<10);
 
 	//Zero out junk data
-	for (int i = maxMolecules + 1; i < newWeightingFunction.size(); i++) { newWeightingFunction[i] = 0.0; }
+	std::vector<double> newestWeightingFunction;
+	newestWeightingFunction.resize(maxMolecules + 1);
+	for (int i = 0; i < newestWeightingFunction.size(); i++) { newestWeightingFunction[i] = newWeightingFunction[i]; }
+
 
 	//Vapor/liquid-phase densities calculations
-	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
-	vaporDensity = InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
-	liquidDensity = InvAvogadrosNumTimesTenToTheThirtieth * liquidPeak / boxVolume;
-	densityCoeff = InvAvogadrosNumTimesTenToTheThirtieth / boxVolume;
+	//double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
+	//vaporDensity = InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
+	//liquidDensity = InvAvogadrosNumTimesTenToTheThirtieth * liquidPeak / boxVolume;
+	//densityCoeff = InvAvogadrosNumTimesTenToTheThirtieth / boxVolume;
 
 	//Vapor Pressure calculation
-	double sumFunction = 0.0;
-	for (int i = 0; i < maxMolecules; i++) {
-		sumFunction += newWeightingFunction[i];
-	}
-	double KBTimesTenToTheThirtieth = 13806485.2;			//Boltzmann constant times 10^30 (box volume from cubic angstroms to cubic meters)
-	vaporPressure = (log(sumFunction) - log(newWeightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
+	//double sumFunction = 0.0;
+	//for (int i = 0; i < maxMolecules; i++) {
+	//	sumFunction += newWeightingFunction[i];
+	//}
+	//double KBTimesTenToTheThirtieth = 13806485.2;			//Boltzmann constant times 10^30 (box volume from cubic angstroms to cubic meters)
+	//vaporPressure = (log(sumFunction) - log(newWeightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
 
 	//Surface Tension calculation
-	double KBTimesTenToTheTwentieth = 0.00138064852;
-	surfaceTension = (0.5 * (newWeightingFunction[liquidPeak] + newWeightingFunction[vaporPeak]) - newWeightingFunction[midpoint]) * temperature * KBTimesTenToTheTwentieth / (2 * pow(boxVolume, 2.0 / 3.0));
+	//double KBTimesTenToTheTwentieth = 0.00138064852;
+	//surfaceTension = (0.5 * (newWeightingFunction[liquidPeak] + newWeightingFunction[vaporPeak]) - newWeightingFunction[midpoint]) * temperature * KBTimesTenToTheTwentieth / (2 * pow(boxVolume, 2.0 / 3.0));
 
-	return newWeightingFunction;
+	return newestWeightingFunction;
+}
+
+inline double TransitionMatrix::CalculateVaporDensity(int vaporPeak, double boxVolume) {
+	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
+	return InvAvogadrosNumTimesTenToTheThirtieth * vaporPeak / boxVolume;
+}
+
+inline double TransitionMatrix::CalculateLiquidDensity(int liquidPeak, double boxVolume) {
+	double InvAvogadrosNumTimesTenToTheThirtieth = 1660539.04;		//Inverse Avogadro's Number times 10^30 (box volume from cubic angstroms to cubic meters)
+	return InvAvogadrosNumTimesTenToTheThirtieth * liquidPeak / boxVolume;
+}
+
+inline double TransitionMatrix::CalculateVaporPressure(std::vector<double> weightingFunction, double temperature, double boxVolume) {
+	double sumFunction = 0.0;
+	for (int i = 0; i < maxMolecules; i++) {
+		sumFunction += weightingFunction[i];
+	}
+	double KBTimesTenToTheThirtieth = 13806485.2;			//Boltzmann constant times 10^30 (box volume from cubic angstroms to cubic meters)
+	vaporPressure = (log(sumFunction) - log(weightingFunction[0]) - log(2)) * KBTimesTenToTheThirtieth * temperature / boxVolume;
+}
+
+inline double TransitionMatrix::CalculateSurfaceTension(std::vector<double> weightingFunction, int liquidPeak, int vaporPeak, int midpoint, double temperature, double boxVolume) {
+	double KBTimesTenToTheTwentieth = 0.00138064852;
+	return (0.5 * (weightingFunction[liquidPeak] + weightingFunction[vaporPeak]) - weightingFunction[midpoint]) * temperature * KBTimesTenToTheTwentieth / (2 * pow(boxVolume, 2.0 / 3.0));
 }
 
 #endif
