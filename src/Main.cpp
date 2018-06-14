@@ -126,12 +126,17 @@ int main(int argc, char *argv[])
         
         int num_replicas = sim.replica_temps.size();
        
-        int i;
-        #pragma omp parallel for default(shared) private(i)
+        int i, counter;
+        Simulation* sim_re[num_replicas];
+
+        #pragma omp parallel default(none) private(i) shared(num_replicas, inputFileString, sim_re)
+        {
+        #pragma omp for
             for (i = 0; i < num_replicas; i++) {
-                Simulation sim_re(inputFileString.c_str());
-                sim_re.RunSimulation();
+                sim_re[i] = new Simulation(inputFileString.c_str(), i);
+                sim_re[i]->RunSimulation();
             }
+        }
     }
     // GJS
   }

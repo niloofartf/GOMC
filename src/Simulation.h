@@ -21,6 +21,8 @@ public:
   std::vector<double> replica_temps;
 // GJS
   explicit Simulation(char const*const configFileName);
+  explicit Simulation(char const*const configFileName, int initiatingLoopIteration);
+  Simulation(void);
   ~Simulation();
 
   void RunSimulation(void);

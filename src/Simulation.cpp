@@ -45,6 +45,46 @@ Simulation::Simulation(char const*const configFileName)
 
 }
 
+Simulation::Simulation(char const*const configFileName, int initiatingLoopIteration)
+{
+  //NOTE:
+  //IMPORTANT! Keep this order...
+  //as system depends on staticValues, and cpu sometimes depends on both.
+  Setup set;
+  set.Init(configFileName, initiatingLoopIteration);
+// GJS
+  usingRE = set.config.sys.usingRE;
+  replica_temps = set.config.sys.T.replica_temps;
+// GJS
+  totalSteps = set.config.sys.step.total;
+  staticValues = new StaticVals(set);
+  system = new System(*staticValues);
+  staticValues->Init(set, *system);
+  system->Init(set);
+  //recal Init for static value for initializing ewald since ewald is
+  //initialized in system
+  staticValues->InitOver(set, *system);
+  cpu = new CPUSide(*system, *staticValues);
+  cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
+            totalSteps);
+
+  //Dump combined PSF
+  PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap,
+                   set.pdb.atoms.resKindNames);
+  psfOut.PrintPSF(set.config.out.state.files.psf.name);
+  std::cout << "Printed combined psf to file "
+            << set.config.out.state.files.psf.name << '\n';
+
+}
+
+Simulation::Simulation(void)
+{
+  cpu = NULL;
+  system = NULL;
+  staticValues = NULL;
+}
+
+
 Simulation::~Simulation()
 {
   delete cpu;
