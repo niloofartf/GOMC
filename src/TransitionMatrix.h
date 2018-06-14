@@ -277,8 +277,8 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 		}
 		
 		int midrange = (int) 0.15*maxMolecules;
-		midlow = midpoint - midrange;
-		midhigh = midpoint + midrange;
+		int midlow = midpoint - midrange;
+		int midhigh = midpoint + midrange;
 		for(int i = midlow; i < midhigh; i++) {
 			if (newWeightingFunction[i] < newWeightingFunction[midpoint]) {
 				midpoint = i;
@@ -305,8 +305,7 @@ inline std::vector<double> TransitionMatrix::PostProcessTransitionMatrix()
 	} while (processLoopCount<10);
 
 	//Zero out junk data
-	std::vector<double> newestWeightingFunction;
-	newestWeightingFunction.resize(maxMolecules + 1);
+	std::vector<double> newestWeightingFunction(maxMolecules+1);
 	for (int i = 0; i < newestWeightingFunction.size(); i++) { newestWeightingFunction[i] = newWeightingFunction[i]; }
 
 
