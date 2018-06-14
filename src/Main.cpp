@@ -16,6 +16,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <thread>
 #include <sstream>
 #include <list>
+#include "repl_ex.h"
 // GJS
 
 //find and include appropriate files for getHostname
@@ -28,6 +29,12 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <sys/utsname.h>
 #define HOSTNAME
 #endif
+
+// GJS
+struct gmx_output_env_t;
+struct ReplicaExchangeParameters;
+struct t_commrec;
+// GJS
 
 namespace
 {
@@ -48,6 +55,9 @@ void PrintGPUHardwareInfo();
 
 int main(int argc, char *argv[])
 {
+
+ReplicaExchangeParameters replExchangeParams;
+
 #ifndef NDEBUG
   PrintDebugMode();
 #endif
@@ -112,6 +122,8 @@ int main(int argc, char *argv[])
     Simulation sim(inputFileString.c_str());
     // GJS
     bool usingRE = sim.usingRE;
+    //&replExchangeParameter
+
 
     if (!usingRE){
         sim.RunSimulation();
@@ -125,18 +137,20 @@ int main(int argc, char *argv[])
         std::cout << "I recognize you want to use NVT-RE since usingRE is true.\n " << std::endl; 
         
         int num_replicas = sim.replica_temps.size();
-       
-        int i, counter;
-        Simulation* sim_re[num_replicas];
-
-        #pragma omp parallel default(none) private(i) shared(num_replicas, inputFileString, sim_re)
-        {
-        #pragma omp for
-            for (i = 0; i < num_replicas; i++) {
-                sim_re[i] = new Simulation(inputFileString.c_str(), i);
-                sim_re[i]->RunSimulation();
-            }
+        if (num_replicas > numThreads){
+          std::cout << "Error: Not enough threads!\n";
+          std::cout << "Use  a 1:1 ratio of replicas:threads.\n";
+          exit(EXIT_FAILURE);
         }
+               
+        int i, counter;
+        Simulation sim_re;
+
+        #pragma omp parallel for default(none) private(i, sim_re) shared(num_replicas, inputFileString)
+            for (i = 0; i < num_replicas; i++) {
+                sim_re = Simulation(inputFileString.c_str());
+                sim_re.RunSimulation();
+            }
     }
     // GJS
   }

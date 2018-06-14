@@ -13,11 +13,16 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "StaticVals.h"
 #include "BasicTypes.h"
 
+#include "repl_ex.h"
+
+
 class Simulation
 {
 public:
 // GJS  
   bool usingRE;
+  int numberOfAtoms;
+  std::string replica_log;
   std::vector<double> replica_temps;
 // GJS
   explicit Simulation(char const*const configFileName);
@@ -26,6 +31,7 @@ public:
   ~Simulation();
 
   void RunSimulation(void);
+  void RunSimulation(const ReplicaExchangeParameters &replExParams);
 
 #ifndef NDEBUG
   void RunningCheck(const uint step);
