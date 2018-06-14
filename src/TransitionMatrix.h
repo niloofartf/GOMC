@@ -70,7 +70,7 @@ private:
   int GetTMEtcIndex(int numMolec);
   int GetTMInsIndex(int numMolec);
   
-  double CalculateVaporDensity(int vaporPeak, double boxVolume)
+  double CalculateVaporDensity(int vaporPeak, double boxVolume);
   double CalculateLiquidDensity(int liquidPeak, double boxVolume);
   double CalculateVaporPressure(std::vector<double> weightingFunction, double temperature, double boxVolume);
   double CalculateSurfaceTension(std::vector<double> weightingFunction, int liquidPeak, int vaporPeak, int midpoint, double temperature, double boxVolume);
