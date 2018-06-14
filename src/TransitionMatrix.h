@@ -204,9 +204,9 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 		std::cout << weightingFunction[i] << ",";
 	}
 	std::cout << weightingFunction[weightingFunction.size() - 1] << "\n";
-	
+
 	std::cout << "\nVapor peak: " << vaporPeak << "; midpoint: " << midpoint << "; liquid peak: " << liquidPeak;
-	std::cout << "\nVapor density: " << CalculateVaporPeak(vaporPeak, boxVolume) << " (mol/m3); Liquid peak: " << CalculateLiquidDensity(int liquidPeak, double boxVolume) << " (mol/m3)";
+	std::cout << "\nVapor density: " << CalculateVaporDensity(vaporPeak, boxVolume) << " (mol/m3); Liquid peak: " << CalculateLiquidDensity(int liquidPeak, double boxVolume) << " (mol/m3)";
 	std::cout << "\nVapor pressure: " << CalculateVaporPressure(weightingFunction, temperature, boxVolume) << " (Pa)";
 	std::cout << "\nSurface Tension: " << CalculateSurfaceTension(weightingFunction, liquidPeak, vaporPeak, midpoint, temperature, boxVolume) << " (N/m)";
 	std::cout << "\nBox Length(assumes cubic box) : " << pow(boxVolume, 1 / 3.0) << " (ang) \n";
