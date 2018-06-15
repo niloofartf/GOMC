@@ -317,7 +317,7 @@ public:
   config_setup::SystemVals sys;
   ConfigSetup(void);
   void Init(const char *fileName);
-
+  void Init(const char *fileName, int initiatingLoopIteration);
 private:
   void fillDefaults(void);
   bool checkBool(string str);

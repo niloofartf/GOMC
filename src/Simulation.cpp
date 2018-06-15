@@ -6,9 +6,6 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
 #include "Simulation.h"
 #include "Setup.h"          //For setup object
-#include "gromacs/utility/basedefinitions.h"
-#include "gromacs/mdlib/stat.cpp"
-#include "gromacs/mdlib/md_support.cpp"
 
 #include "EnergyTypes.h"
 #include "PSFOutput.h"
@@ -17,8 +14,8 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <omp.h>
 
 // GJS
-//#include "repl_ex.h"
-#include "gromacs/mdtypes/state.h"
+#include "Repl_ex.cpp"
+#include "State.cpp"
 //
 
 Simulation::Simulation(char const*const configFileName)
@@ -53,8 +50,43 @@ Simulation::Simulation(char const*const configFileName)
   std::cout << "Printed combined psf to file "
             << set.config.out.state.files.psf.name << '\n';
   replica_log = set.config.out.statistics.settings.uniqueStr.val;
+  std::cout << "Finished initializing Sim object "
+            << set.config.out.state.files.psf.name << '\n';
+  
+}
+
+Simulation::Simulation(char const*const configFileName, int initiatingLoopIteration)
+{
+  //NOTE:
+  //IMPORTANT! Keep this order...
+  //as system depends on staticValues, and cpu sometimes depends on both.
+  Setup set;
+  set.Init(configFileName, initiatingLoopIteration);
+// GJS
+  usingRE = set.config.sys.usingRE;
+  replica_temps = set.config.sys.T.replica_temps;
+// GJS
+  totalSteps = set.config.sys.step.total;
+  staticValues = new StaticVals(set);
+  system = new System(*staticValues);
+  staticValues->Init(set, *system);
+  system->Init(set);
+  //recal Init for static value for initializing ewald since ewald is
+  //initialized in system
+  staticValues->InitOver(set, *system);
+  cpu = new CPUSide(*system, *staticValues);
+  cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
+            totalSteps);
+
+  //Dump combined PSF
+  PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap,
+                   set.pdb.atoms.resKindNames);
+  psfOut.PrintPSF(set.config.out.state.files.psf.name);
+  std::cout << "Printed combined psf to file "
+            << set.config.out.state.files.psf.name << '\n';
 
 }
+    
 Simulation::Simulation(void)
 {
   cpu = NULL;
@@ -74,12 +106,9 @@ void Simulation::RunSimulation(void)
 {
   double startEnergy = system->potential.totalEnergy.total;
   for (ulong step = 0; step < totalSteps; step++) {
-      system->potential = system->calcEnergy.SystemTotal();
-      double currEnergy = system->potential.totalEnergy.total;
     system->moveSettings.AdjustMoves(step);
     system->ChooseAndRunMove(step);
     cpu->Output(step);
-      printf("energy : %f\n", currEnergy);
 
     if((step + 1) == cpu->equilSteps) {
       double currEnergy = system->potential.totalEnergy.total;
@@ -104,35 +133,25 @@ void Simulation::RunSimulation(void)
 void Simulation::RunSimulation(const ReplicaExchangeParameters &replExParams)
 {
 // GJS
-  PaddedRVecVector  f {};
+  //PaddedRVecVector  f {};
 
   std::cout << "GJS" << omp_get_thread_num() << std::endl;
   gmx_repl_ex_t     repl_ex = nullptr;
 
-  t_state * state_global;
-  state_global = new t_state();
-
-  set_state_entries(state_global, inputrec);
+  t_state * state_global = new t_state();
 
 // Local state only becomes valid now.
   t_state *                state;
 
-
-  state_change_natoms(state_global, state_global->natoms);
-  /* We need to allocate one element extra, since we might use
-   * (unaligned) 4-wide SIMD loads to access rvec entries.
-   */
-  f.resize(gmx::paddedRVecVectorSize(state_global->natoms));
-  /* Copy the pointer to the global state */
   state = state_global;
 
 
-  gmx::ThreeFry2x64<64> rng(replExParams.randomSeed, gmx::RandomDomain::ReplicaExchange);
-  gmx::UniformRealDistribution<real>   uniformRealDist;
+  //gmx::ThreeFry2x64<64> rng(replExParams.randomSeed, gmx::RandomDomain::ReplicaExchange);
+  //gmx::UniformRealDistribution<real>   uniformRealDist;
 
-  gmx_bool bFirstStep, bInitStep, bLastStep = false;
+  int bFirstStep, bInitStep, bLastStep = false;
 
-  gmx_bool bDoReplEx, bExchanged;
+  int bDoReplEx, bExchanged;
 
   FILE *fplog = fopen (replica_log.c_str(), "a");  
 
@@ -174,8 +193,8 @@ void Simulation::RunSimulation(const ReplicaExchangeParameters &replExParams)
       }
     }
 
-    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep &&
-                      do_per_step(step, replExParams.exchangeInterval) && ( step > cpu->equilSteps));
+    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep);// &&
+                      //do_per_step(step, replExParams.exchangeInterval) && ( step > cpu->equilSteps));
 
     if (bDoReplEx) {
  
