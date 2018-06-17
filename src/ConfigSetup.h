@@ -14,6 +14,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 // GJS
 #include <vector>
 #include <omp.h>
+#include "Repl_Ex.h"
 // GJS
 
 #include "InputAbstracts.h" //For ReadableBase parent class.
@@ -317,7 +318,7 @@ public:
   config_setup::SystemVals sys;
   ConfigSetup(void);
   void Init(const char *fileName);
-  void Init(const char *fileName, int initiatingLoopIteration);
+  void Init(const char *fileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams);
 private:
   void fillDefaults(void);
   bool checkBool(string str);

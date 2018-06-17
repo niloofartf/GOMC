@@ -7,3 +7,8 @@ to ConfigSetup
 
 I am working to get automated directory and conf file production.  The call to GOMC will still include only 1 .conf
 But I have to add a +RE flag, because whether or not this is a replica exchange needs to be known so the number of Simulation objects can equal the number of replicas.  By the time the ConfigSetup object notices there are more than one temp in the conf file, it is too late to build more simulation objects.  Perhaps the first simulation object could be a factory that will build more as needed, but a flag is an easier method that requires less digging into the guts of GOMC.
+
+
+
+Ok so as of now I need to get the up2date energy array into t4re.  prepare2doex returns fine,
+since nothing is dependent on a functioning t state, its fine that it exists in name only as of right now but to carry out exchanges in need to fill her up.

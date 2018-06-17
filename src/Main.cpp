@@ -16,7 +16,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <thread>
 #include <sstream>
 #include <list>
-#include "Repl_ex.h"
+#include "Repl_Ex.h"
 // GJS
 
 //find and include appropriate files for getHostname
@@ -149,11 +149,13 @@ ReplicaExchangeParameters replExchangeParams;
         int i;
 
         Simulation* sim_re[num_replicas];
+        ReplicaExchangeParameters replExParams;
 
-        #pragma omp parallel for default(none) private(i) shared(num_replicas, inputFileString, sim_re)
+        #pragma omp parallel for default(none) private(i) shared(num_replicas, inputFileString, sim_re, replExParams)
             for (i = 0; i < num_replicas; i++) {
-                sim_re[i] = new Simulation(inputFileString.c_str(), i);
-                sim_re[i]->RunSimulation();
+                sim_re[i] = new Simulation(inputFileString.c_str(), i, &replExParams);
+                // overloaded RunSim for RE
+                sim_re[i]->RunSimulation(&replExParams);
             }
     }
     // GJS

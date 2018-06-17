@@ -13,7 +13,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "StaticVals.h"
 #include "BasicTypes.h"
 
-#include "Repl_ex.h"
+#include "Repl_Ex.h"
 
 
 class Simulation
@@ -26,12 +26,12 @@ public:
   std::vector<double> replica_temps;
 // GJS
   explicit Simulation(char const*const configFileName);
-  explicit Simulation(char const*const configFileName, int initiatingLoopIteration);
+  explicit Simulation(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams);
   Simulation(void);
   ~Simulation();
 
   void RunSimulation(void);
-  void RunSimulation(const ReplicaExchangeParameters &replExParams);
+  void RunSimulation(ReplicaExchangeParameters* replExParams);
 
 #ifndef NDEBUG
   void RunningCheck(const uint step);

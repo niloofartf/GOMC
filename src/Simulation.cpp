@@ -14,7 +14,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <omp.h>
 
 // GJS
-#include "Repl_ex.cpp"
+#include "Repl_Ex.cpp"
 #include "State.cpp"
 //
 
@@ -55,16 +55,17 @@ Simulation::Simulation(char const*const configFileName)
   
 }
 
-Simulation::Simulation(char const*const configFileName, int initiatingLoopIteration)
+Simulation::Simulation(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams)
 {
   //NOTE:
   //IMPORTANT! Keep this order...
   //as system depends on staticValues, and cpu sometimes depends on both.
   Setup set;
-  set.Init(configFileName, initiatingLoopIteration);
+  set.Init(configFileName, initiatingLoopIteration, replExParams);
 // GJS
   usingRE = set.config.sys.usingRE;
   replica_temps = set.config.sys.T.replica_temps;
+  replExParams->replica_temps = set.config.sys.T.replica_temps;
 // GJS
   totalSteps = set.config.sys.step.total;
   staticValues = new StaticVals(set);
@@ -130,10 +131,9 @@ void Simulation::RunSimulation(void)
 }
 
 
-void Simulation::RunSimulation(const ReplicaExchangeParameters &replExParams)
+void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
 {
-// GJS
-  //PaddedRVecVector  f {};
+  // GJS
 
   std::cout << "GJS" << omp_get_thread_num() << std::endl;
   gmx_repl_ex_t     repl_ex = nullptr;
@@ -153,18 +153,22 @@ void Simulation::RunSimulation(const ReplicaExchangeParameters &replExParams)
 
   int bDoReplEx, bExchanged;
 
-  FILE *fplog = fopen (replica_log.c_str(), "a");  
+  std::string fast = "hot indian chick";
+
+  //FILE *fplog = fopen (replica_log.c_str(), "a");  
+  FILE *fplog = fopen(fast.c_str(), "a");  
 
 
- const bool useReplicaExchange = (replExParams.exchangeInterval > 0);
+ const bool useReplicaExchange = (replExParams->exchangeInterval > 0);
   //if (useReplicaExchange && MASTER(cr))
     // pragma omp master
   if (useReplicaExchange){
 
 //        printf(" calling init, passing natoms : %d\n", top_global->natoms);
 //        repl_ex = init_replica_exchange(fplog, cr->ms, top_global->natoms, ir, replExParams);
-        printf(" calling init\n");
+        printf(" calling init w temp of %f\n", staticValues->forcefield.T_in_K);
         repl_ex = init_replica_exchange(fplog, staticValues->forcefield.T_in_K, replExParams);
+        //repl_ex = init_replica_exchange(fplog, 123, replExParams);
     }
 
 
@@ -193,21 +197,22 @@ void Simulation::RunSimulation(const ReplicaExchangeParameters &replExParams)
       }
     }
 
-    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep);// &&
+    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0));// &&
                       //do_per_step(step, replExParams.exchangeInterval) && ( step > cpu->equilSteps));
 
     if (bDoReplEx) {
- 
+            
+            printf("GJS About to call replica_exchange\n");
              bExchanged = replica_exchange(fplog, repl_ex,
                                            state_global, system->potential.totalEnergy.total,
-                                           state, step);
+                                           state, step, replExParams);
     }
 
     //if (useReplicaExchange && MASTER(cr))
     // pragma omp master
     if (useReplicaExchange)
      {
-         print_replica_exchange_statistics(fplog, repl_ex);
+         //print_replica_exchange_statistics(fplog, repl_ex);
      }
 
 

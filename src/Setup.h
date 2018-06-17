@@ -15,6 +15,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "PDBSetup.h"
 #include "PRNGSetup.h"
 #include "MolSetup.h"
+//#include "Repl_Ex.h"
 
 class Setup
 {
@@ -25,6 +26,7 @@ public:
   FFSetup ff;          //3
   PRNGSetup prng;      //4
   MolSetup mol;        //5
+  ReplicaExchangeParameters replExParams;
 
   void Init(char const*const configFileName)
   {
@@ -44,10 +46,10 @@ public:
 
   }
 
-  void Init(char const*const configFileName, int initiatingLoopIteration)
+  void Init(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams)
   {
     //Read in all config data
-    config.Init(configFileName, initiatingLoopIteration);
+    config.Init(configFileName, initiatingLoopIteration, replExParams);
     //Read in FF data.
     ff.Init(config.in.files.param.name, config.in.ffKind.isCHARMM);
     //Read PDB dat

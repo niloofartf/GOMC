@@ -619,7 +619,8 @@ void ConfigSetup::Init(const char *fileName)
         printf("%-40s %-s \n", "Info: Constant seed", "Active");
       else
         printf("Warning: Constant seed set, but will be ignored.\n");
-    } else {
+    }
+    else {
       cout << "Warning: Unknown input " << line[0] << "!" << endl;
     }
     // Clear and get ready for the next line
@@ -635,7 +636,7 @@ void ConfigSetup::Init(const char *fileName)
 }
 
 
-void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration)
+void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams)
 {
   std::vector<std::string> line;
 
@@ -825,6 +826,12 @@ void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration)
       sys.step.adjustment = stringtoi(line[1]);
       printf("%-40s %-lu \n", "Info: Move adjustment frequency",
              sys.step.adjustment);
+
+    } else if(line[0] == "ExchSteps") {
+      replExParams->exchangeInterval = stringtoi(line[1]);
+      printf("%-40s %-d \n", "Info: Exchange frequency",
+             replExParams->exchangeInterval);
+
     } else if(line[0] == "PressureCalc") {
       sys.step.pressureCalc = checkBool(line[1]);
       if(line.size() == 3)
@@ -1106,6 +1113,11 @@ void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration)
         printf("%-40s %-s \n", "Info: Constant seed", "Active");
       else
         printf("Warning: Constant seed set, but will be ignored.\n");
+    
+    } else if(line[0] == "RE_Seed") {
+        replExParams->randomSeed = stringtoi(line[1]);
+        printf("%-40s %-s \n", "Info: Replica Exchange seed", "Active");
+    
     } else {
       cout << "Warning: Unknown input " << line[0] << "!" << endl;
     }
