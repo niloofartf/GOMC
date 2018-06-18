@@ -50,19 +50,26 @@ public:
 	double CalculateBias(int move);
 	void UpdateWeightingFunction(ulong step);
 	void PrintTMProbabilityDistribution();
+	int nmax, nmin;						//Specify minimum and maximum molecule counts in simulation
+										//Important for TMMC because biasing allows extremely unlikely phase space explorations that
+										//do not impact on the final result, causing wasted calculations and CPU time.
+										//Nmin currently not implemented, but allows for parallelized 
+
+	bool biasingOn;						//Config flag, turns biasing on or off.
+
+	uint molKind;						//Track what kind of molecule we're interested in; currently defaults to 0 
+										//(Current implementation works with single component systems only).
+										//If user can select a component to track, adsorption/absorption sims become possible.
 
 private:
   const MoleculeLookup& molLookRef;	//Used to reference number of molecules of interest in the main box
   const BoxDimensions& currentAxes;     //Used for volume
   const Forcefield& forcefield;			//Used for temperature
-  bool biasingOn;						//Config flag, turns biasing on or off
   ulong biasStep;                       //Biasing steps
   double boxVolume, temperature;// , vaporPressure, surfaceTension, vaporDensity, liquidDensity;
   int INITIAL_WEIGHTINGFUNCTION_VALUE;
   
-  uint molKind;							//Track what kind of molecule we're interested in; currently defaults to 0 
-										//(Current implementation works with single component systems only)
-										//If user can select a component to track, adsorption/absorption sims become possible
+  
 
   //std::vector<double> PostProcessTransitionMatrix();
   int GetTMDelIndex(int numMolec);
@@ -77,6 +84,8 @@ private:
 inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	biasingOn = tmmc.enable;
 	biasStep = tmmc.step;
+	nmax = tmmc.Nmax;
+	nmin = tmmc.Nmin;
 	molKind = 0;								//TODO: make input from MoleculeLookup 
 	boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;

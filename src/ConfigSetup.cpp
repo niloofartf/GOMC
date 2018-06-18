@@ -557,7 +557,15 @@ void ConfigSetup::Init(const char *fileName)
       out.state.files.tmmc.step = stringtoi(line[1]);
       printf("%-40s %-4lu \n", "Info: TMMC bias step",
              out.state.files.tmmc.step);
-    }
+	} else if (line[0] == "Nmin") {
+		out.state.files.tmmc.Nmin = stringtoi(line[1]);
+		printf("%-40s %-4i \n", "Info: TMMC minimum simulation molecules",
+			out.state.files.tmmc.Nmin);
+	} else if (line[0] == "Nmax") {
+		out.state.files.tmmc.Nmax = stringtoi(line[1]);
+		printf("%-40s %-4i \n", "Info: TMMC maximum simulation molecules",
+			out.state.files.tmmc.Nmax);
+	}
 #endif
     else if(line[0] == "OutEnergy") {
       out.statistics.vars.energy.block = checkBool(line[1]);
