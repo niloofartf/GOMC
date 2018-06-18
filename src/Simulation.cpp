@@ -49,7 +49,7 @@ Simulation::Simulation(char const*const configFileName)
   psfOut.PrintPSF(set.config.out.state.files.psf.name);
   std::cout << "Printed combined psf to file "
             << set.config.out.state.files.psf.name << '\n';
-  replica_log = set.config.out.statistics.settings.uniqueStr.val;
+
   std::cout << "Finished initializing Sim object "
             << set.config.out.state.files.psf.name << '\n';
   
@@ -62,6 +62,8 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
   //as system depends on staticValues, and cpu sometimes depends on both.
   Setup set;
   set.Init(configFileName, initiatingLoopIteration, replExParams);
+  replica_log = set.config.out.statistics.settings.uniqueStr.val;
+  replica_log += ".replica_log"; 
 // GJS
   usingRE = set.config.sys.usingRE;
   replica_temps = set.config.sys.T.replica_temps;
@@ -79,6 +81,7 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
   cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
             totalSteps);
 
+  
   //Dump combined PSF
   PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap,
                    set.pdb.atoms.resKindNames);
@@ -143,6 +146,7 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
 // Local state only becomes valid now.
   t_state *                state;
 
+
   state = state_global;
 
 
@@ -153,10 +157,10 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
 
   int bDoReplEx, bExchanged;
 
-  std::string fast = "hot indian chick";
+  printf("beth %s\n", replica_log.c_str());
 
-  //FILE *fplog = fopen (replica_log.c_str(), "a");  
-  FILE *fplog = fopen(fast.c_str(), "a");  
+
+  FILE *fplog = fopen(replica_log.c_str(), "a");  
 
 
  const bool useReplicaExchange = (replExParams->exchangeInterval > 0);
@@ -164,9 +168,10 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
     // pragma omp master
   if (useReplicaExchange){
 
-//        printf(" calling init, passing natoms : %d\n", top_global->natoms);
-//        repl_ex = init_replica_exchange(fplog, cr->ms, top_global->natoms, ir, replExParams);
-        printf(" calling init w temp of %f\n", staticValues->forcefield.T_in_K);
+      //        printf(" calling init, passing natoms : %d\n", top_global->natoms);
+      //        repl_ex = init_replica_exchange(fplog, cr->ms, top_global->natoms, ir, replExParams);
+#pragma omp barrier          
+      printf(" calling init w temp of %f\n", staticValues->forcefield.T_in_K);
         repl_ex = init_replica_exchange(fplog, staticValues->forcefield.T_in_K, replExParams);
         //repl_ex = init_replica_exchange(fplog, 123, replExParams);
     }
@@ -201,19 +206,14 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
                       //do_per_step(step, replExParams.exchangeInterval) && ( step > cpu->equilSteps));
 
     if (bDoReplEx) {
-            
+  #pragma omp barrier          
             printf("GJS About to call replica_exchange\n");
              bExchanged = replica_exchange(fplog, repl_ex,
                                            state_global, system->potential.totalEnergy.total,
                                            state, step, replExParams);
+            printf("GJS Returned from call to replica_exchange\n");
     }
 
-    //if (useReplicaExchange && MASTER(cr))
-    // pragma omp master
-    if (useReplicaExchange)
-     {
-         //print_replica_exchange_statistics(fplog, repl_ex);
-     }
 
 
 #ifndef NDEBUG
@@ -222,6 +222,10 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
 #endif
   }
   system->PrintTime();
+    if (useReplicaExchange)
+     {
+         print_replica_exchange_statistics(fplog, repl_ex);
+     }
 }
 
 #ifndef NDEBUG

@@ -49,6 +49,7 @@ struct gmx_multisim_t;
 struct t_commrec;
 struct t_inputrec;
 class t_state;
+class PRNG;
 
 /* The parameters for the replica exchange algorithm */
 struct ReplicaExchangeParameters
@@ -65,8 +66,8 @@ struct ReplicaExchangeParameters
     int exchangeInterval; /* Interval in steps at which to attempt exchanges, 0 means no replica exchange */
     int numExchanges;     /* The number of exchanges to attempt at an exchange step */
     int randomSeed;       /* The random seed, -1 means generate a seed */
-    std::vector<double> replica_temps;
-    std::vector<double> replica_energies;
+    std::vector<float> replica_temps;
+    std::vector<float> replica_energies;
 };
 
 /* Abstract type for replica exchange */
@@ -74,13 +75,13 @@ typedef struct gmx_repl_ex *gmx_repl_ex_t;
 
 gmx_repl_ex_t
 init_replica_exchange(FILE                            *fplog,
-                      double                      temp,
+                      float                      temp,
                       ReplicaExchangeParameters* replExParams);
 /* Should only be called on the master ranks */
 
 int replica_exchange(FILE *fplog,
                           gmx_repl_ex_t re,
-                          t_state *state, const double enerd,
+                          t_state *state, float enerd,
                           t_state *state_local,
                           int step,
                           ReplicaExchangeParameters* replExParams);

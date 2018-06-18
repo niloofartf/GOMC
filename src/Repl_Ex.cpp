@@ -179,7 +179,7 @@ static int repl_quantity(struct gmx_repl_ex *re, int ere, float q, ReplicaExchan
 
 gmx_repl_ex_t
 init_replica_exchange(FILE                            *fplog,
-                      double                             temp,
+                      float                             temp,
                       ReplicaExchangeParameters* replExParams)
 {
     float                pres;
@@ -187,6 +187,7 @@ init_replica_exchange(FILE                            *fplog,
     struct gmx_repl_ex *re;
     int            bTemp;
     int            bLambda = false;
+    
 
     fprintf(fplog, "\nInitializing Replica Exchange\n");
     printf("\nInitializing Replica Exchange\n");
@@ -199,6 +200,7 @@ init_replica_exchange(FILE                            *fplog,
 
     re = (gmx_repl_ex*)malloc(sizeof(gmx_repl_ex));
 
+    re->bNPT     = 0;
     re->repl     = omp_get_thread_num();
     re->nrepl    = omp_get_num_threads();
     re->q = (float**)malloc(sizeof(float*)*ereENDSINGLE);
@@ -290,23 +292,13 @@ init_replica_exchange(FILE                            *fplog,
             exit(EXIT_FAILURE);
             
     }
-/*    
-    re->nst = nst;
-    if (replExParams.randomSeed == -1)
-    {
-        if (MASTERSIM(ms))
-        {
-            re->seed = static_cast<int>(gmx::makeRandomSeed());
-        }
-        else
-        {
-            re->seed = 0;
-        }
-        gmx_sumi_sim(1, &(re->seed), ms);
-    }
-    else*/
-    
+
+
+    re->nst = replExParams->exchangeInterval;
+
     re->seed = replExParams->randomSeed;
+
+
     fprintf(fplog, "\nReplica exchange interval: %d\n", re->nst);
     fprintf(fplog, "\nReplica random seed: %d\n", re->seed);
 
@@ -612,7 +604,7 @@ static float calc_delta(FILE *fplog, int bPrint, struct gmx_repl_ex *re, int a, 
     float  *Vol  = re->Vol;
     float **de   = re->de;
     float  *beta = re->beta;
-
+    
     /* Two cases; we are permuted and not.  In all cases, setting ap = a and bp = b will reduce
        to the non permuted case */
 
@@ -622,8 +614,11 @@ static float calc_delta(FILE *fplog, int bPrint, struct gmx_repl_ex *re, int a, 
             /*
              * Okabe et. al. Chem. Phys. Lett. 335 (2001) 435-439
              */
+
             ediff = Epot[b] - Epot[a];
+    
             delta = -(beta[bp] - beta[ap])*ediff;
+
             break;
         case ereLAMBDA:
             /* two cases:  when we are permuted, and not.  */
@@ -685,10 +680,14 @@ static float calc_delta(FILE *fplog, int bPrint, struct gmx_repl_ex *re, int a, 
             printf("Unknown replica exchange quantity");
             exit(EXIT_FAILURE);
     }
+    
     if (bPrint)
     {
+
         fprintf(fplog, "Repl %d <-> %d  dE_term = %10.3e (kT)\n", a, b, delta);
+    
     }
+
     if (re->bNPT)
     {
         /* revist the calculation for 5.0.  Might be some improvements. */
@@ -699,14 +698,15 @@ static float calc_delta(FILE *fplog, int bPrint, struct gmx_repl_ex *re, int a, 
         }
         delta += dpV;
     }
+    
     return delta;
 }
 
 
-static void
+void
 test_for_replica_exchange(FILE                          *fplog,
                           struct gmx_repl_ex            *re,
-                          const double                  enerd,
+                          float                         enerd,
                           float                         vol,
                           int                           step,
                           ReplicaExchangeParameters*    replExParams)
@@ -745,11 +745,30 @@ test_for_replica_exchange(FILE                          *fplog,
         }
         bEpot              = true;
        
-        printf("GJS about to do some thread magic\n");
-        cout.flush();
+        /* temperatures of different states*/
+        for (i = 0; i < re->nrepl; i++)
+        {
+            re->beta[i] = 1.0/(re->q[ereTEMP][i]*BOLTZ);
+        }
+    }
+    else{
+    
+        for (i = 0; i < re->nrepl; i++)
+        {
+            re->beta[i] = 1.0/(re->temp*BOLTZ);  /* we have a single temperature */
+        }
+    }
+    
+    /* now actually do the communication */
+    if (bVol)
+    {
+   // For NPT
+   //     gmx_sum_sim(re->nrepl, re->Vol, ms);
+    }
+    
+    if (bEpot)
+    {
         #pragma omp barrier
-        printf("GJS passed the barrier\n");
-        cout.flush();
         
         #pragma omp single 
         {
@@ -760,7 +779,7 @@ test_for_replica_exchange(FILE                          *fplog,
         #pragma omp barrier
  
         #pragma omp atomic        
-            replExParams->replica_energies[re->repl] += enerd;
+        replExParams->replica_energies[re->repl] += enerd;
 
         #pragma omp barrier
         
@@ -770,69 +789,50 @@ test_for_replica_exchange(FILE                          *fplog,
                 re->Epot[i] = replExParams->replica_energies[i];        
     
         }
+        
+        #pragma omp barrier
 
-        for ( int i = 0; i < re->nrepl; i++ ) {
-        printf("GJS I am replica %d ; replica  %d has energy %f\n", re->repl, i, re->Epot[i]); 
-            if ( i == re->nrepl-1 ){
-                cout.flush();
-                while(true){}
-            }
-        }
-        /* temperatures of different states*/
-        for (i = 0; i < re->nrepl; i++)
-        {
-            re->beta[i] = 1.0/(re->q[ereTEMP][i]*BOLTZ);
-        }
-    }
-    else
-    {
-        for (i = 0; i < re->nrepl; i++)
-        {
-            re->beta[i] = 1.0/(re->temp*BOLTZ);  /* we have a single temperature */
-        }
-    }
-    
-    /* now actually do the communication */
-    if (bVol)
-    {
-   //     gmx_sum_sim(re->nrepl, re->Vol, ms);
-    }
-    if (bEpot)
-    {
-     //   gmx_sum_sim(re->nrepl, re->Epot, ms);
-    }
-    if (bDLambda)
-    {
-        for (i = 0; i < re->nrepl; i++)
-        {
-       //     gmx_sum_sim(re->nrepl, re->de[i], ms);
-        }
-    }
+/*        for (int i = 0; i < replExParams->replica_energies.size(); i++){
+            printf("GJS I am replica %d ; repl_energ[%d] = %f ; Epot[%d] = %f\n", re->repl, i, replExParams->replica_energies[i], i, re->Epot[i]);
+            cout.flush();
+        }*/
 
+    }
     /* make a duplicate set of indices for shuffling */
     for (i = 0; i < re->nrepl; i++)
     {
         pind[i] = re->ind[i];
     }
-
-//    rng.restart( step, 0 );
+    
+    /* make a duplicate set of indices for shuffling */
+    for (i = 0; i < re->nrepl; i++)
+    {
+        re->prob[i] = 0.0;
+        re->prob_sum[i] = 0.0;
+        re->bEx[i] = 0;
+    }
+    
     /* standard nearest neighbor replica exchange */
 
     m = (step / re->nst) % 2;
+    
     for (i = 1; i < re->nrepl; i++)
     {
         a = re->ind[i-1];
         b = re->ind[i];
 
         bPrint = (re->repl == a || re->repl == b);
+        
         if (i % 2 == m)
         {
-            delta = calc_delta(fplog, bPrint, re, a, b, a, b);
+        
+        delta = calc_delta(fplog, bPrint, re, a, b, a, b);
+            
             if (delta <= 0)
             {
                 /* accepted */
                 prob[i] = 1;
-                bEx[i]  = true;
+                bEx[i]  = 1;
             }
             else
             {
@@ -848,9 +848,10 @@ test_for_replica_exchange(FILE                          *fplog,
                 // reset, but just in case we ever add more calls in different branches
                 // it is safer to always reset the distribution.
                 //uniformRealDist.reset();
-                float randVar = rand() / (RAND_MAX + 1.0);
-                bEx[i] = randVar < prob[i];
+                float randVar = ((float) rand() / (RAND_MAX)) + 1;
+                bEx[i] = (int)(randVar < prob[i]);
             }
+            
             re->prob_sum[i] += prob[i];
 
             if (bEx[i])
@@ -865,9 +866,10 @@ test_for_replica_exchange(FILE                          *fplog,
         else
         {
             prob[i] = -1;
-            bEx[i]  = false;
+            bEx[i]  = 0;
         }
     }
+    
     /* print some statistics */
     print_ind(fplog, "ex", re->nrepl, re->ind, bEx);
     print_prob(fplog, "pr", re->nrepl, prob);
@@ -1052,7 +1054,7 @@ prepare_to_do_exchange(struct gmx_repl_ex *re,
 }
 
 int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
-                          t_state *state, const double enerd,
+                          t_state *state, float enerd,
                           t_state *state_local, int step, ReplicaExchangeParameters* replExParams)
 {
     printf("GJS inside replica_exchange\n");
@@ -1072,13 +1074,9 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
     // GJS figure out where vol is stored
     float vol = 0.0;
 
-        test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams);
-        
-    printf("GJS about to call prepare_2dEX\n");
-    cout.flush();
-        prepare_to_do_exchange(re, replica_id, &maxswap, &bThisReplicaExchanged);
-    printf("GJS returned from call to prepare_2dEX\n");
-    cout.flush();
+    test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams);
+    
+    prepare_to_do_exchange(re, replica_id, &maxswap, &bThisReplicaExchanged);
 
     if (bThisReplicaExchanged)
     {
@@ -1102,12 +1100,7 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
                         fprintf(debug, "Exchanging %d with %d\n", replica_id, exchange_partner);
                     }
 
-
-
-
                     exchange_state(cr->ms, exchange_partner, state);
-
-
 
                     */
                 }

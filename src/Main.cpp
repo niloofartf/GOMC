@@ -31,9 +31,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #endif
 
 // GJS
-struct gmx_output_env_t;
 struct ReplicaExchangeParameters;
-struct t_commrec;
 // GJS
 
 namespace
@@ -56,7 +54,6 @@ void PrintGPUHardwareInfo();
 int main(int argc, char *argv[])
 {
 
-ReplicaExchangeParameters replExchangeParams;
 
 #ifndef NDEBUG
   PrintDebugMode();
@@ -154,7 +151,7 @@ ReplicaExchangeParameters replExchangeParams;
         #pragma omp parallel for default(none) private(i) shared(num_replicas, inputFileString, sim_re, replExParams)
             for (i = 0; i < num_replicas; i++) {
                 sim_re[i] = new Simulation(inputFileString.c_str(), i, &replExParams);
-                // overloaded RunSim for RE
+             // overloaded RunSim for RE
                 sim_re[i]->RunSimulation(&replExParams);
             }
     }

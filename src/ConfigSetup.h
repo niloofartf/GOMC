@@ -108,10 +108,10 @@ struct Input {
 // System-specific structures
 
 struct Temperature {
-  double inKelvin;
+  float inKelvin;
 
 // GJS
-  std::vector<double> replica_temps;
+  std::vector<float> replica_temps;
 // GJS
 };
 

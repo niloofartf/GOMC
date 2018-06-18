@@ -23,7 +23,7 @@ public:
   bool usingRE;
   int numberOfAtoms;
   std::string replica_log;
-  std::vector<double> replica_temps;
+  std::vector<float> replica_temps;
 // GJS
   explicit Simulation(char const*const configFileName);
   explicit Simulation(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams);
@@ -38,8 +38,8 @@ public:
 #endif
 
 private:
-  StaticVals * staticValues;
   System * system;
+  StaticVals * staticValues;
   CPUSide * cpu;
   ulong totalSteps;
 };

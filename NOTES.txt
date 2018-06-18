@@ -12,3 +12,34 @@ But I have to add a +RE flag, because whether or not this is a replica exchange 
 
 Ok so as of now I need to get the up2date energy array into t4re.  prepare2doex returns fine,
 since nothing is dependent on a functioning t state, its fine that it exists in name only as of right now but to carry out exchanges in need to fill her up.
+
+TODO:
+
+Scale vels - uneccessary 
+exchan state
+state object - points to the exchangeables in system
+prng  - done, points to system's prng
+file name fplog -- I think this is done
+Dont atempt till after equilibration
+
+
+Look into whether bonded energy should be considered in system total
+Also investigate the meaning of replExParams->nex - I thought it would mean each replica only attempts one exchange
+Check to make sure it doesnt mean of all replicas, only one exchange is attempted.
+
+Also, fix the statistics, such as empirical transition matrix.  It doesnt show up at the end. 
+
+Add a flag to check if OPENMP is def to Main
+
+If NDEF 
+OPENMP Throw error
+
+GRID:
+
+Install INTEL compiler / or GCC OPENMP
+Not all clusters have OpenMP library
+
+Intel 2016 - MPI
+
+Load Module(Intel XXXX ; MPI ) 
+Job Script on Website to run simulation

@@ -5,11 +5,11 @@ class t_state
         //! Constructor
         t_state();
   
-        int                        natoms;         //!< Number of atoms, local + non-local; this is the size of \p x, \p v and \p cg_p, when used
-        std::vector<std::vector<float>> x;              //!< The coordinates (natoms)
-        // Center of Mass
-        // Box Dimensions
-        // Cell List
+          SystemPotential* potential; //ex
+          Coordinates* coordinates; //ex
+          COM* com; //ex
+          Ewald *calcEwald; //ex
+          CellList* cellList; //ex
 
 };
 

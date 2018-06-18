@@ -80,17 +80,17 @@ public:
 #endif
 
   //Use as we don't know where they are...
-  BoxDimensions & boxDimRef;
-  MoleculeLookup & molLookupRef;
+  BoxDimensions & boxDimRef; //ex
+  MoleculeLookup & molLookupRef; //ex
 
   MoveSettings moveSettings;
-  SystemPotential potential;
-  Coordinates coordinates;
-  COM com;
+  SystemPotential potential; //ex
+  Coordinates coordinates; //ex
+  COM com; //ex
 
   CalculateEnergy calcEnergy;
-  Ewald *calcEwald;
-  CellList cellList;
+  Ewald *calcEwald; //ex
+  CellList cellList; //ex
   PRNG prng;
 
   //Procedure to run once move is picked... can also be called directly for

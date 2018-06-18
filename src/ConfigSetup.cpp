@@ -240,7 +240,7 @@ void ConfigSetup::Init(const char *fileName)
         } else {
            
             sys.usingRE = true; 
-            std::vector<double> replica_temps;
+            std::vector<float> replica_temps;
 
             for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
                 replica_temps.push_back(stringtod(*itr));
@@ -731,13 +731,14 @@ void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration, Replic
         } else {
            
             sys.usingRE = true; 
-            std::vector<double> replica_temps;
+            std::vector<float> replica_temps;
 
             for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
                 replica_temps.push_back(stringtod(*itr));
             }
             
             sys.T.inKelvin = replica_temps[initiatingLoopIteration];
+            
             sys.T.replica_temps = replica_temps;
             printf("\n");
             printf("%-40s ", "Info: Input Temperature");
