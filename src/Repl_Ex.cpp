@@ -684,8 +684,7 @@ test_for_replica_exchange(FILE                          *fplog,
                           float                         vol,
                           int                           step,
                           ReplicaExchangeParameters*    replExParams,
-                          Replica_State*                      state_global,
-                          Replica_State*                      state)
+                          Replica_State*                      state_global)
 {
     printf("GJS inside test_for_replica_exchange\n");
     int                                  m, i, j, a, b, ap, bp, i0, i1, tmp;
@@ -750,15 +749,14 @@ test_for_replica_exchange(FILE                          *fplog,
         {
             for ( int i = 0; i < re->nrepl; i++ )
                 replExParams->replica_energies[i] = 0.0;
-                replExParams->replica_states[i] = 0;
+        //        replExParams->replica_states[i] = 0;
         }
 
         #pragma omp barrier
  
         #pragma omp atomic        
-        replExParams->replica_energies[re->repl] += enerd;
-        replExParams->replica_states[re->repl] = state_global;
-
+            replExParams->replica_energies[re->repl] += enerd;
+            replExParams->replica_states[re->repl] = state_global;
         #pragma omp barrier
         
         #pragma omp critical
@@ -1033,7 +1031,7 @@ prepare_to_do_exchange(struct gmx_repl_ex *re,
 
 int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
                           Replica_State *state_global, float enerd,
-                          Replica_State *state, int step, ReplicaExchangeParameters* replExParams)
+                          int step, ReplicaExchangeParameters* replExParams)
 {
     printf("GJS inside replica_exchange\n");
     int j;
@@ -1052,7 +1050,7 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
     // GJS figure out where vol is stored
     float vol = 0.0;
 
-    test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams, state_global, state);
+    test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams, state_global);
     
     prepare_to_do_exchange(re, replica_id, &maxswap, &bThisReplicaExchanged);
 
@@ -1068,14 +1066,13 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
             {
                 exchange_partner = re->order[replica_id][j];
 
-                if (exchange_partner != replica_id && (exchange_partner % 2 == 0) )
+                if (exchange_partner != replica_id && (replica_id % 2 == 0))
                 {
                     /* Exchange the global states between the master nodes */
                     printf("GJS Exchanging %d with %d\n", replica_id, exchange_partner);
-                    printf("GJS repl %d before call to ex state : %d\n", omp_get_thread_num(), replExParams->replica_states[re->repl]);
                     //exchange_state(state, exchange_partner, replExParams);
-                    std::swap(replExParams->replica_states[re->repl], replExParams->replica_states[exchange_partner]);
-                    printf("GJS repl %d after call to ex state : %d\n", omp_get_thread_num(), replExParams->replica_states[re->repl]);
+                    state_global = replExParams->replica_states[exchange_partner];
+                    std::swap(replExParams->replica_states[replica_id], replExParams->replica_states[exchange_partner]);
 
                 }
             }
@@ -1089,6 +1086,8 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
             /* Copy the global state to the local state data structure */
             //copy_state_serial(state, state_local);
     }
+
+    #pragma omp barrier
 
     return bThisReplicaExchanged;
 }
@@ -1144,11 +1143,3 @@ void print_replica_exchange_statistics(FILE *fplog, struct gmx_repl_ex *re)
     print_transition_matrix(fplog, re->nrepl, re->nmoves, re->nattempt);
 }
 
-void exchange_state(Replica_State* state, int exchange_partner, ReplicaExchangeParameters* replExParams){
-        #pragma omp critical
-        {
-                printf("GJS PRE %d state : %d\n", omp_get_thread_num(), state);
-                state = replExParams->replica_states[exchange_partner];
-                printf("GJS POST %d state : %d\n", omp_get_thread_num(), state);
-        }
-}

@@ -144,7 +144,7 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
   Replica_State * state_global = new Replica_State();
 
 // Local state only becomes valid now.
-  Replica_State *                state;
+  //Replica_State *                state;
 
   //gmx::ThreeFry2x64<64> rng(replExParams.randomSeed, gmx::RandomDomain::ReplicaExchange);
   //gmx::UniformRealDistribution<real>   uniformRealDist;
@@ -207,17 +207,17 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
             }
 
             GetSystem(state_global, system);
-            state = state_global;
+    //        state = state_global;
             printf("GJS About to call replica_exchange\n");
-            printf("GJS PRE re id %d , step: %lu, epot %f\n", repl_ex->repl, step, state->potential->totalEnergy.total);
+            printf("GJS PRE re id %d , step: %lu, epot %f\n", repl_ex->repl, step, state_global->potential->totalEnergy.total);
             bExchanged = replica_exchange(fplog, repl_ex,
                                            state_global, system->potential.totalEnergy.total,
-                                           state, step, replExParams);
+                                           step, replExParams);
             printf("GJS Returned from call to replica_exchange\n");
             if (bExchanged){
-                state = replExParams->replica_states[repl_ex->repl];
-                printf("GJS POST re id %d , step: %lu, epot %f\n", repl_ex->repl, step, state->potential->totalEnergy.total);
-                SetSystem(state, system);
+                state_global = replExParams->replica_states[repl_ex->repl];
+                printf("GJS POST re id %d , step: %lu, epot %f\n", repl_ex->repl, step, state_global->potential->totalEnergy.total);
+                SetSystem(state_global, system);
             }
             for (int i = 0; i < repl_ex->nrepl; i++){
                 //printf("re id : %d , state[%d]->epot : %f\n", repl_ex->repl, i, replExParams->replica_states[i]->potential->totalEnergy.total);    

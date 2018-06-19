@@ -80,8 +80,7 @@ init_replica_exchange(FILE                            *fplog,
 
 int replica_exchange(FILE *fplog,
                           gmx_repl_ex_t re,
-                          Replica_State *state, float enerd,
-                          Replica_State *state_local,
+                          Replica_State *state_global, float enerd,
                           int step,
                           ReplicaExchangeParameters* replExParams);
 /* Attempts replica exchange, should be called on all ranks.
@@ -95,6 +94,4 @@ int replica_exchange(FILE *fplog,
 void print_replica_exchange_statistics(FILE *fplog, gmx_repl_ex_t re);
 /* Should only be called on the master ranks */
 
-void exchange_state(Replica_State* state, int exchange_partner, ReplicaExchangeParameters* replExParams);
-/* Should only be called on the master ranks */
 #endif  /* _repl_ex_h */
