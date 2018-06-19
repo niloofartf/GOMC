@@ -188,10 +188,10 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	UpdateWeightingFunction(biasStep - 1);
 
 	std::cout << "\nTM Particle Number Probability Distribution:\n";
-	for (int i = 0; i < weightingFunction.size()-1; i++) {
+	for (int i = 0; i < nmax; i++) {
 		std::cout << weightingFunction[i] << ",";
 	}
-	std::cout << weightingFunction[weightingFunction.size() - 1];
+	std::cout << weightingFunction[nmax] << endl;
 
 	ofstream TMfile;
 	TMfile.open("TMFile.dat");		//TODO: make this an actual name
