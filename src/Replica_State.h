@@ -3,17 +3,23 @@ class Coordinates;
 class COM;
 class CalcEwald;
 class CellList;
+class Ewald;
 
-class t_state
+class Replica_State
 {
     public:
         //! Constructor
-        t_state();
-  
+        Replica_State(){
+            potential = NULL;
+          coordinates = NULL; //ex
+          com = NULL; //ex
+          calcEwald = NULL; //ex
+          cellList = NULL; //ex
+        }  
           SystemPotential* potential; //ex
           Coordinates* coordinates; //ex
           COM* com; //ex
-          Ewald *calcEwald; //ex
+          Ewald* *calcEwald; //ex
           CellList* cellList; //ex
 
 };

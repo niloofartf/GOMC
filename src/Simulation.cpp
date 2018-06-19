@@ -15,7 +15,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 
 // GJS
 #include "Repl_Ex.cpp"
-#include "State.cpp"
+#include "Replica_State.h"
 //
 
 Simulation::Simulation(char const*const configFileName)
@@ -141,13 +141,10 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
   std::cout << "GJS" << omp_get_thread_num() << std::endl;
   gmx_repl_ex_t     repl_ex = nullptr;
 
-  t_state * state_global = new t_state();
+  Replica_State * state_global = new Replica_State();
 
 // Local state only becomes valid now.
-  t_state *                state;
-
-
-
+  Replica_State *                state;
 
   //gmx::ThreeFry2x64<64> rng(replExParams.randomSeed, gmx::RandomDomain::ReplicaExchange);
   //gmx::UniformRealDistribution<real>   uniformRealDist;
@@ -168,12 +165,9 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
   if (useReplicaExchange){
 
 
-      //        printf(" calling init, passing natoms : %d\n", top_global->natoms);
-      //        repl_ex = init_replica_exchange(fplog, cr->ms, top_global->natoms, ir, replExParams);
 #pragma omp barrier          
       printf(" calling init w temp of %f\n", staticValues->forcefield.T_in_K);
-        repl_ex = init_replica_exchange(fplog, staticValues->forcefield.T_in_K, replExParams);
-        //repl_ex = init_replica_exchange(fplog, 123, replExParams);
+      repl_ex = init_replica_exchange(fplog, staticValues->forcefield.T_in_K, replExParams);
     }
 
 
@@ -203,19 +197,31 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
     }
 
     bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0));// &&
-                      //do_per_step(step, replExParams.exchangeInterval) && ( step > cpu->equilSteps));
+                      //( step > cpu->equilSteps));
 
     if (bDoReplEx) {
   #pragma omp barrier          
-        
+       
+            for (int i = 0; i < repl_ex->nrepl; i++){
+  //              printf("re id : %d , state[%d]->epot : %f\n", repl_ex->repl, i, replExParams->replica_states[i]->potential->totalEnergy.total);    
+            }
+
             GetSystem(state_global, system);
             state = state_global;
             printf("GJS About to call replica_exchange\n");
+            printf("GJS PRE re id %d , step: %lu, epot %f\n", repl_ex->repl, step, state->potential->totalEnergy.total);
             bExchanged = replica_exchange(fplog, repl_ex,
                                            state_global, system->potential.totalEnergy.total,
                                            state, step, replExParams);
             printf("GJS Returned from call to replica_exchange\n");
-            SetSystem(state, system);
+            if (bExchanged){
+                state = replExParams->replica_states[repl_ex->repl];
+                printf("GJS POST re id %d , step: %lu, epot %f\n", repl_ex->repl, step, state->potential->totalEnergy.total);
+                SetSystem(state, system);
+            }
+            for (int i = 0; i < repl_ex->nrepl; i++){
+                //printf("re id : %d , state[%d]->epot : %f\n", repl_ex->repl, i, replExParams->replica_states[i]->potential->totalEnergy.total);    
+            }
     }
 
 
@@ -269,22 +275,22 @@ void Simulation::RunningCheck(const uint step)
 }
 #endif
 
-void Simulation::GetSystem(t_state* state_get, System* system_get){
+void Simulation::GetSystem(Replica_State* state_get, System* system_get){
 
     state_get->potential = &(system_get->potential);
     state_get->com = &(system_get->com);
     state_get->coordinates = &(system_get->coordinates);
     state_get->cellList = &(system_get->cellList);
-    state_get->calcEwald = system_get->calcEwald;
+    state_get->calcEwald = &(system_get->calcEwald);
 
 }
 
-void Simulation::SetSystem(t_state* state_set, System* system_set){
+void Simulation::SetSystem(Replica_State* state_set, System* system_set){
 
     system_set->potential = *(state_set->potential);
     system_set->com = *(state_set->com);
     system_set->coordinates = *(state_set->coordinates);
     system_set->cellList = *(state_set->cellList);
-    system_set->calcEwald = state_set->calcEwald;
+    system_set->calcEwald = *(state_set->calcEwald);
 
 }

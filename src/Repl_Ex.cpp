@@ -343,9 +343,9 @@ init_replica_exchange(FILE                            *fplog,
 
     #pragma omp single 
     { 
+        replExParams->replica_states = (Replica_State**)malloc(sizeof(Replica_State*)*re->nrepl);
         for (int i = 0; i < re->nrepl; i++){
             replExParams->replica_energies.push_back(0.0);
-            replExParams->replica_states.push_back(0);
         }
     }
 
@@ -424,48 +424,20 @@ static void exchange_rvecs(const gmx_multisim_t gmx_unused *ms, int gmx_unused b
     }
 }
 */
-/*
-static void exchange_state(const gmx_multisim_t *ms, int b, t_state *state)
-{
-    // When t_state changes, this code should be updated. 
-    int ngtc, nnhpres;
-    ngtc    = state->ngtc * state->nhchainlength;
-    nnhpres = state->nnhpres* state->nhchainlength;
-    exchange_rvecs(ms, b, state->box, DIM);
-    exchange_rvecs(ms, b, state->box_rel, DIM);
-    exchange_rvecs(ms, b, state->boxv, DIM);
-    exchange_zetas(ms, b, &(state->zeta), 1);
 
-    exchange_floats(ms, b, &(state->veta), 1);
-    exchange_floats(ms, b, &(state->vol0), 1);
-    exchange_rvecs(ms, b, state->svir_prev, DIM);
-    exchange_rvecs(ms, b, state->fvir_prev, DIM);
-    exchange_rvecs(ms, b, state->pres_prev, DIM);
-    exchange_doubles(ms, b, state->nosehoover_xi.data(), ngtc);
-    exchange_doubles(ms, b, state->nosehoover_vxi.data(), ngtc);
-    exchange_doubles(ms, b, state->nhpres_xi.data(), nnhpres);
-    exchange_doubles(ms, b, state->nhpres_vxi.data(), nnhpres);
-    exchange_doubles(ms, b, state->therm_integral.data(), state->ngtc);
-    exchange_doubles(ms, b, &state->baros_integral, 1);
-    exchange_rvecs(ms, b, as_rvec_array(state->x.data()), state->natoms);
-    exchange_rvecs(ms, b, as_rvec_array(state->v.data()), state->natoms);
-}
-
-static void copy_state_serial(const t_state *src, t_state *dest)
+static void copy_state_serial(const Replica_State *src, Replica_State *dest)
 {
     if (dest != src)
     {
         // Currently the local state is always a pointer to the global
         //  in serial, so we should never end up here.
-        // TODO: Implement a (trivial) t_state copy once converted to C++.
+        // TODO: Implement a (trivial) Replica_State copy once converted to C++.
         //
-        GMX_RELEASE_ASSERT(false, "State copying is currently not implemented in replica exchange");
     }
 }
-*/
 
 /*
-static void scale_velocities(t_state *state, float fac)
+static void scale_velocities(Replica_State *state, float fac)
 {
     int i;
 
@@ -712,8 +684,8 @@ test_for_replica_exchange(FILE                          *fplog,
                           float                         vol,
                           int                           step,
                           ReplicaExchangeParameters*    replExParams,
-                          t_state*                      state_global,
-                          t_state*                      state)
+                          Replica_State*                      state_global,
+                          Replica_State*                      state)
 {
     printf("GJS inside test_for_replica_exchange\n");
     int                                  m, i, j, a, b, ap, bp, i0, i1, tmp;
@@ -793,7 +765,7 @@ test_for_replica_exchange(FILE                          *fplog,
         {
             for (int i = 0; i < re->nrepl; i++) 
                 re->Epot[i] = replExParams->replica_energies[i];        
-    
+                //printf("re id : %d , state[%d]->epot : %f\n", re->repl, i, replExParams->replica_states[re->repl]->potential->totalEnergy.total);    
         }
         
         #pragma omp barrier
@@ -1060,8 +1032,8 @@ prepare_to_do_exchange(struct gmx_repl_ex *re,
 }
 
 int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
-                          t_state *state_global, float enerd,
-                          t_state *state, int step, ReplicaExchangeParameters* replExParams)
+                          Replica_State *state_global, float enerd,
+                          Replica_State *state, int step, ReplicaExchangeParameters* replExParams)
 {
     printf("GJS inside replica_exchange\n");
     int j;
@@ -1092,17 +1064,18 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
             /* There will be only one swap cycle with standard replica
              * exchange, but there may be multiple swap cycles if we
              * allow multiple swaps. */
-
             for (j = 0; j < maxswap; j++)
             {
                 exchange_partner = re->order[replica_id][j];
 
-                if (exchange_partner != replica_id)
+                if (exchange_partner != replica_id && (exchange_partner % 2 == 0) )
                 {
                     /* Exchange the global states between the master nodes */
-                    printf("Redfearn Exchanging %d with %d\n", replica_id, exchange_partner);
-
-                    exchange_state(state, exchange_partner, replExParams);
+                    printf("GJS Exchanging %d with %d\n", replica_id, exchange_partner);
+                    printf("GJS repl %d before call to ex state : %d\n", omp_get_thread_num(), replExParams->replica_states[re->repl]);
+                    //exchange_state(state, exchange_partner, replExParams);
+                    std::swap(replExParams->replica_states[re->repl], replExParams->replica_states[exchange_partner]);
+                    printf("GJS repl %d after call to ex state : %d\n", omp_get_thread_num(), replExParams->replica_states[re->repl]);
 
                 }
             }
@@ -1171,9 +1144,11 @@ void print_replica_exchange_statistics(FILE *fplog, struct gmx_repl_ex *re)
     print_transition_matrix(fplog, re->nrepl, re->nmoves, re->nattempt);
 }
 
-void exchange_state(t_state* state, int exchange_partner, ReplicaExchangeParameters* replExParams){
+void exchange_state(Replica_State* state, int exchange_partner, ReplicaExchangeParameters* replExParams){
         #pragma omp critical
         {
+                printf("GJS PRE %d state : %d\n", omp_get_thread_num(), state);
                 state = replExParams->replica_states[exchange_partner];
+                printf("GJS POST %d state : %d\n", omp_get_thread_num(), state);
         }
 }

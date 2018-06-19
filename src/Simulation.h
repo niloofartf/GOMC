@@ -32,8 +32,8 @@ public:
 
   void RunSimulation(void);
   void RunSimulation(ReplicaExchangeParameters* replExParams);
-  void GetSystem(t_state* state_get, System* system_get);
-  void SetSystem(t_state* state_set, System* system_set);
+  void GetSystem(Replica_State* state_get, System* system_get);
+  void SetSystem(Replica_State* state_set, System* system_set);
 
 #ifndef NDEBUG
   void RunningCheck(const uint step);

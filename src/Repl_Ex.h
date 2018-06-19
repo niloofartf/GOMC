@@ -39,16 +39,14 @@
 #define _repl_ex_h
 
 #include <cstdio>
-
-//#include "gromacs/utility/basedefinitions.h"
-//#include "gromacs/utility/float.h"
+//#include "Replica_State.h"
 
 
 struct gmx_enerdata_t;
 struct gmx_multisim_t;
 struct t_commrec;
 struct t_inputrec;
-class t_state;
+class Replica_State;
 class PRNG;
 
 /* The parameters for the replica exchange algorithm */
@@ -59,8 +57,7 @@ struct ReplicaExchangeParameters
         numExchanges(1),
         randomSeed(-1),
         replica_temps(),
-        replica_energies(),
-        replica_states()
+        replica_energies()
      {
      };
 
@@ -69,7 +66,7 @@ struct ReplicaExchangeParameters
     int randomSeed;       /* The random seed, -1 means generate a seed */
     std::vector<float> replica_temps;
     std::vector<float> replica_energies;
-    std::vector<t_state*> replica_states;
+    Replica_State** replica_states;
 };
 
 /* Abstract type for replica exchange */
@@ -83,8 +80,8 @@ init_replica_exchange(FILE                            *fplog,
 
 int replica_exchange(FILE *fplog,
                           gmx_repl_ex_t re,
-                          t_state *state, float enerd,
-                          t_state *state_local,
+                          Replica_State *state, float enerd,
+                          Replica_State *state_local,
                           int step,
                           ReplicaExchangeParameters* replExParams);
 /* Attempts replica exchange, should be called on all ranks.
@@ -98,6 +95,6 @@ int replica_exchange(FILE *fplog,
 void print_replica_exchange_statistics(FILE *fplog, gmx_repl_ex_t re);
 /* Should only be called on the master ranks */
 
-void exchange_state(t_state* state, int exchange_partner, ReplicaExchangeParameters* replExParams);
+void exchange_state(Replica_State* state, int exchange_partner, ReplicaExchangeParameters* replExParams);
 /* Should only be called on the master ranks */
 #endif  /* _repl_ex_h */
