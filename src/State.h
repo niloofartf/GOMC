@@ -1,3 +1,8 @@
+class SystemPotential;
+class Coordinates;
+class COM;
+class CalcEwald;
+class CellList;
 
 class t_state
 {

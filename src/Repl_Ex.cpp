@@ -345,6 +345,7 @@ init_replica_exchange(FILE                            *fplog,
     { 
         for (int i = 0; i < re->nrepl; i++){
             replExParams->replica_energies.push_back(0.0);
+            replExParams->replica_states.push_back(0);
         }
     }
 
@@ -358,6 +359,7 @@ init_replica_exchange(FILE                            *fplog,
     printf("I finished intializing\n");
     return re;
 }
+
 /*
 static void exchange_floats(const gmx_multisim_t gmx_unused *ms, int gmx_unused b, float *v, int n)
 {
@@ -709,7 +711,9 @@ test_for_replica_exchange(FILE                          *fplog,
                           float                         enerd,
                           float                         vol,
                           int                           step,
-                          ReplicaExchangeParameters*    replExParams)
+                          ReplicaExchangeParameters*    replExParams,
+                          t_state*                      state_global,
+                          t_state*                      state)
 {
     printf("GJS inside test_for_replica_exchange\n");
     int                                  m, i, j, a, b, ap, bp, i0, i1, tmp;
@@ -774,12 +778,14 @@ test_for_replica_exchange(FILE                          *fplog,
         {
             for ( int i = 0; i < re->nrepl; i++ )
                 replExParams->replica_energies[i] = 0.0;
+                replExParams->replica_states[i] = 0;
         }
 
         #pragma omp barrier
  
         #pragma omp atomic        
         replExParams->replica_energies[re->repl] += enerd;
+        replExParams->replica_states[re->repl] = state_global;
 
         #pragma omp barrier
         
@@ -1054,8 +1060,8 @@ prepare_to_do_exchange(struct gmx_repl_ex *re,
 }
 
 int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
-                          t_state *state, float enerd,
-                          t_state *state_local, int step, ReplicaExchangeParameters* replExParams)
+                          t_state *state_global, float enerd,
+                          t_state *state, int step, ReplicaExchangeParameters* replExParams)
 {
     printf("GJS inside replica_exchange\n");
     int j;
@@ -1074,7 +1080,7 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
     // GJS figure out where vol is stored
     float vol = 0.0;
 
-    test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams);
+    test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams, state_global, state);
     
     prepare_to_do_exchange(re, replica_id, &maxswap, &bThisReplicaExchanged);
 
@@ -1094,15 +1100,10 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
                 if (exchange_partner != replica_id)
                 {
                     /* Exchange the global states between the master nodes */
-                    /*
-                    if (debug)
-                    {
-                        fprintf(debug, "Exchanging %d with %d\n", replica_id, exchange_partner);
-                    }
+                    printf("Redfearn Exchanging %d with %d\n", replica_id, exchange_partner);
 
-                    exchange_state(cr->ms, exchange_partner, state);
+                    exchange_state(state, exchange_partner, replExParams);
 
-                    */
                 }
             }
             /* For temperature-type replica exchange, we need to scale
@@ -1168,4 +1169,11 @@ void print_replica_exchange_statistics(FILE *fplog, struct gmx_repl_ex *re)
     }
     /* print the transition matrix */
     print_transition_matrix(fplog, re->nrepl, re->nmoves, re->nattempt);
+}
+
+void exchange_state(t_state* state, int exchange_partner, ReplicaExchangeParameters* replExParams){
+        #pragma omp critical
+        {
+                state = replExParams->replica_states[exchange_partner];
+        }
 }

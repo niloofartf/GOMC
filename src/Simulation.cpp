@@ -147,7 +147,6 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
   t_state *                state;
 
 
-  state = state_global;
 
 
   //gmx::ThreeFry2x64<64> rng(replExParams.randomSeed, gmx::RandomDomain::ReplicaExchange);
@@ -167,6 +166,7 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
   //if (useReplicaExchange && MASTER(cr))
     // pragma omp master
   if (useReplicaExchange){
+
 
       //        printf(" calling init, passing natoms : %d\n", top_global->natoms);
       //        repl_ex = init_replica_exchange(fplog, cr->ms, top_global->natoms, ir, replExParams);
@@ -207,11 +207,15 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
 
     if (bDoReplEx) {
   #pragma omp barrier          
+        
+            GetSystem(state_global, system);
+            state = state_global;
             printf("GJS About to call replica_exchange\n");
-             bExchanged = replica_exchange(fplog, repl_ex,
+            bExchanged = replica_exchange(fplog, repl_ex,
                                            state_global, system->potential.totalEnergy.total,
                                            state, step, replExParams);
             printf("GJS Returned from call to replica_exchange\n");
+            SetSystem(state, system);
     }
 
 
@@ -264,3 +268,23 @@ void Simulation::RunningCheck(const uint step)
 
 }
 #endif
+
+void Simulation::GetSystem(t_state* state_get, System* system_get){
+
+    state_get->potential = &(system_get->potential);
+    state_get->com = &(system_get->com);
+    state_get->coordinates = &(system_get->coordinates);
+    state_get->cellList = &(system_get->cellList);
+    state_get->calcEwald = system_get->calcEwald;
+
+}
+
+void Simulation::SetSystem(t_state* state_set, System* system_set){
+
+    system_set->potential = *(state_set->potential);
+    system_set->com = *(state_set->com);
+    system_set->coordinates = *(state_set->coordinates);
+    system_set->cellList = *(state_set->cellList);
+    system_set->calcEwald = state_set->calcEwald;
+
+}
