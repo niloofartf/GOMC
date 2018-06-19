@@ -744,28 +744,19 @@ test_for_replica_exchange(FILE                          *fplog,
     if (bEpot)
     {
         #pragma omp barrier
-        
-        #pragma omp single 
-        {
-            for ( int i = 0; i < re->nrepl; i++ )
-                replExParams->replica_energies[i] = 0.0;
-        //        replExParams->replica_states[i] = 0;
-        }
+        #pragma omp critical 
+        {        
+            replExParams->replica_energies[re->repl] = enerd;
 
-        #pragma omp barrier
- 
-        #pragma omp atomic        
-            replExParams->replica_energies[re->repl] += enerd;
             replExParams->replica_states[re->repl] = state_global;
+        }
         #pragma omp barrier
         
         #pragma omp critical
         {
             for (int i = 0; i < re->nrepl; i++) 
                 re->Epot[i] = replExParams->replica_energies[i];        
-                //printf("re id : %d , state[%d]->epot : %f\n", re->repl, i, replExParams->replica_states[re->repl]->potential->totalEnergy.total);    
         }
-        
         #pragma omp barrier
 
 /*        for (int i = 0; i < replExParams->replica_energies.size(); i++){
