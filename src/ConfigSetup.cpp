@@ -94,6 +94,8 @@ ConfigSetup::ConfigSetup(void)
   out.state.files.hist.stepsPerHistSample = UINT_MAX;
   out.state.files.tmmc.enable = false;
   out.state.files.tmmc.step = ULONG_MAX;
+  out.state.files.tmmc.Nmax = UINT_MAX;
+  out.state.files.tmmc.Nmin = 0;
 #endif
   out.statistics.settings.uniqueStr.val = "";
   out.state.settings.frequency = ULONG_MAX;

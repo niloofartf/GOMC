@@ -53,7 +53,7 @@ public:
 	int nmax, nmin;						//Specify minimum and maximum molecule counts in simulation
 										//Important for TMMC because biasing allows extremely unlikely phase space explorations that
 										//do not impact on the final result, causing wasted calculations and CPU time.
-										//Nmin currently not implemented, but allows for parallelized 
+										//Nmin currently not implemented, but allows for parallelization via umbrella
 
 	bool biasingOn;						//Config flag, turns biasing on or off.
 
@@ -84,16 +84,28 @@ private:
 inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	biasingOn = tmmc.enable;
 	biasStep = tmmc.step;
-	nmax = tmmc.Nmax;
-	nmin = tmmc.Nmin;
 	molKind = 0;								//TODO: make input from MoleculeLookup 
+	
 	boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
 
 	INITIAL_WEIGHTINGFUNCTION_VALUE = 1.0;
 	int totMolec = molLookRef.NumKindInBox(molKind, mv::BOX0) + molLookRef.NumKindInBox(molKind, mv::BOX1);
+
+	if (tmmc.Nmax != UINT_MAX && nmax < totMolec) {
+		nmax = tmmc.Nmax;	//TODO: Print warnings when these changes are made if necessary
+	}
+	else {
+		nmax = totMolec;
+	}
+
+	//nmin = tmmc.Nmin;
+	//if (nmin < 0) {
+	//	nmin = 0;
+	//}
+
 	//del/etc/ins, del/etc/ins, ... 
-	transitionMatrix.resize(3 * totMolec);
+	transitionMatrix.resize(3 * (nmax+1));
 	for (int i = 0; i < transitionMatrix.size(); i++) { transitionMatrix[i] = 0.0; }
 
 	weightingFunction.resize(totMolec);
