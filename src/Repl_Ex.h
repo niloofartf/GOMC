@@ -54,7 +54,7 @@ struct ReplicaExchangeParameters
 {
     ReplicaExchangeParameters() :
         exchangeInterval(0),
-        numExchanges(1),
+        numExchanges(0),
         randomSeed(-1),
         replica_temps(),
         replica_energies()

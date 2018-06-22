@@ -353,8 +353,20 @@ init_replica_exchange(FILE                            *fplog,
     
     for (int i = 0; i < re->nrepl; i++){
         re->de[i] = (float*)malloc((re->nrepl)*sizeof(float));
+
     }
     
+    for (int i = 0; i < re->nrepl; i++){
+        re->nexchange[i] = 0;
+    }
+    
+    for (int i = 0; i < re->nrepl; i++){
+        for (int j = 0; j < re->nrepl; j++){
+            re->nmoves[i][j] = 0;
+        }
+    }
+
+ 
     re->nex = replExParams->numExchanges;
     printf("I finished intializing\n");
     return re;
@@ -456,6 +468,7 @@ static void print_transition_matrix(FILE *fplog, int n, int **nmoves, int *natte
     float Tprint;
 
     ntot = nattempt[0] + nattempt[1];
+    printf("YOGA %d\n", ntot);
     fprintf(fplog, "\n");
     fprintf(fplog, "Repl");
     for (i = 0; i < n; i++)
@@ -828,6 +841,7 @@ test_for_replica_exchange(FILE                          *fplog,
                 pind[i-1] = pind[i];
                 pind[i]   = tmp;
                 re->nexchange[i]++;  /* statistics for back compatibility */
+                printf("YOGA repl : %d, i : %d, numexch : %d\n", re->repl, i, re->nexchange[i]);  /* statistics for back compatibility */
             }
         }
         else
