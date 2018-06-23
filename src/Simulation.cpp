@@ -136,36 +136,22 @@ void Simulation::RunSimulation(void)
 
 void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
 {
-  // GJS
 
   std::cout << "GJS" << omp_get_thread_num() << std::endl;
   gmx_repl_ex_t     repl_ex = nullptr;
 
   Replica_State * state_global = new Replica_State();
 
-// Local state only becomes valid now.
-  //Replica_State *                state;
-
-  //gmx::ThreeFry2x64<64> rng(replExParams.randomSeed, gmx::RandomDomain::ReplicaExchange);
-  //gmx::UniformRealDistribution<real>   uniformRealDist;
-
   int bFirstStep, bInitStep, bLastStep = false;
 
   int bDoReplEx, bExchanged;
 
-  printf("beth %s\n", replica_log.c_str());
-
-
   FILE *fplog = fopen(replica_log.c_str(), "a");  
 
-
- const bool useReplicaExchange = (replExParams->exchangeInterval > 0);
-  //if (useReplicaExchange && MASTER(cr))
-    // pragma omp master
+  const bool useReplicaExchange = (replExParams->exchangeInterval > 0);
+  
   if (useReplicaExchange){
-
-
-#pragma omp barrier          
+    #pragma omp barrier          
       printf(" calling init w temp of %f\n", staticValues->forcefield.T_in_K);
       repl_ex = init_replica_exchange(fplog, staticValues->forcefield.T_in_K, replExParams);
     }
@@ -196,35 +182,20 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
       }
     }
 
-    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0));// &&
-                      //( step > cpu->equilSteps));
+    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0));
 
     if (bDoReplEx) {
   #pragma omp barrier          
        
-            for (int i = 0; i < repl_ex->nrepl; i++){
-  //              printf("re id : %d , state[%d]->epot : %f\n", repl_ex->repl, i, replExParams->replica_states[i]->potential->totalEnergy.total);    
-            }
-
             GetSystem(state_global, system);
-    //        state = state_global;
-            printf("GJS About to call replica_exchange\n");
-            printf("GJS PRE re id %d , step: %lu, epot %f\n", repl_ex->repl, step, state_global->potential->totalEnergy.total);
             bExchanged = replica_exchange(fplog, repl_ex,
                                            state_global, system->potential.totalEnergy.total,
                                            step, replExParams);
-            printf("GJS Returned from call to replica_exchange\n");
             if (bExchanged){
                 state_global = replExParams->replica_states[repl_ex->repl];
-                printf("GJS POST re id %d , step: %lu, epot %f\n", repl_ex->repl, step, state_global->potential->totalEnergy.total);
                 SetSystem(state_global, system);
             }
-            for (int i = 0; i < repl_ex->nrepl; i++){
-                //printf("re id : %d , state[%d]->epot : %f\n", repl_ex->repl, i, replExParams->replica_states[i]->potential->totalEnergy.total);    
-            }
     }
-
-
 
 #ifndef NDEBUG
     if((step + 1) % 1000 == 0)
