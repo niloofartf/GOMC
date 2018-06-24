@@ -225,9 +225,26 @@ void ConfigSetup::Init(const char *fileName)
 #if ENSEMBLE == NPT
     else if(line[0] == "Pressure") {
       sys.gemc.kind = mv::GEMC_NPT;
-      sys.gemc.pressure = stringtod(line[1]);
-      printf("%-40s %-4.4f bar\n", "Info: Input Pressure", sys.gemc.pressure);
-      sys.gemc.pressure *= unit::BAR_TO_K_MOLECULE_PER_A3;
+        if (line.size() == 2 ){
+          sys.gemc.pressure = stringtod(line[1]);
+          printf("%-40s %-4.4f bar\n", "Info: Input Pressure", sys.gemc.pressure);
+          sys.gemc.pressure *= unit::BAR_TO_K_MOLECULE_PER_A3;
+        } else {
+            sys.usingRE = true; 
+            std::vector<double> replica_pressures;
+
+            for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
+                replica_pressures.push_back(stringtod(*itr));
+            }
+            // Since this will be the scenario when RE isnt used, the 
+            // Pressure is the first and only value in replica_pressures
+            sys.gemc.pressure = replica_pressures[0];
+            sys.gemc.replica_pressures = replica_pressures;
+            sys.gemc.pressure *= unit::BAR_TO_K_MOLECULE_PER_A3;
+            printf("\n");
+            printf("%-40s %-4.4f bar\n", "Info: Input Pressure", sys.gemc.pressure);
+        }
+// GJS
     }
 #endif
     else if(line[0] == "Temperature") {
@@ -716,9 +733,24 @@ void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration, Replic
 #if ENSEMBLE == NPT
     else if(line[0] == "Pressure") {
       sys.gemc.kind = mv::GEMC_NPT;
-      sys.gemc.pressure = stringtod(line[1]);
-      printf("%-40s %-4.4f bar\n", "Info: Input Pressure", sys.gemc.pressure);
-      sys.gemc.pressure *= unit::BAR_TO_K_MOLECULE_PER_A3;
+        if (line.size() == 2 ){
+          sys.gemc.pressure = stringtod(line[1]);
+          printf("%-40s %-4.4f bar\n", "Info: Input Pressure", sys.gemc.pressure);
+          sys.gemc.pressure *= unit::BAR_TO_K_MOLECULE_PER_A3;
+        } else {
+            sys.usingRE = true; 
+            std::vector<double> replica_pressures;
+
+            for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
+                replica_pressures.push_back(stringtod(*itr));
+            }
+            sys.gemc.pressure = replica_pressures[initiatingLoopIteration];
+            sys.gemc.replica_pressures = replica_pressures;
+            sys.gemc.pressure *= unit::BAR_TO_K_MOLECULE_PER_A3;
+            printf("\n");
+            printf("%-40s %-4.4f bar\n", "Info: Input Pressure", sys.gemc.pressure);
+        }
+// GJS
     }
 #endif
     else if(line[0] == "Temperature") {

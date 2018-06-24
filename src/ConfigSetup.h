@@ -153,6 +153,7 @@ struct FFValues {
 struct GEMCKind {
   uint kind;
   double pressure;
+  std::vector<double> replica_pressures;
 };
 
 #endif

@@ -20,6 +20,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 //Use shortcuts when calculating Rcut
 //#define RCUT_SHORTCUT
 
+typedef double (BoxDimensions::*GetTotVolume)();
 
 class BoxDimensions
 {

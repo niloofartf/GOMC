@@ -93,11 +93,11 @@ typedef struct gmx_repl_ex
 {
     int       repl;        /* replica ID */
     int       nrepl;       /* total number of replica */
-    float      temp;       /* temperature */
+    float     temp;       /* temperature */
     int       type;        /* replica exchange type from ere enum */
     float    **q;          /* quantity, e.g. temperature or lambda; first index is ere, second index is replica ID */
-    int  bNPT;             /* use constant pressure and temperature */
-    float     *pres;       /* replica pressures */
+    int       bNPT;             /* use constant pressure and temperature */
+    double     *pres;       /* replica pressures */
     int      *ind;         /* replica indices */
     int      *allswaps;    /* used for keeping track of all the replica swaps */
     int       nst;         /* replica exchange interval (number of steps) */
@@ -136,7 +136,6 @@ static int repl_quantity(struct gmx_repl_ex *re, int ere, float q, ReplicaExchan
 
     qall = (float*)malloc(omp_get_num_threads()*sizeof(float));
     qall[re->repl] = q;
-//    gmx_sum_sim(ms->nsim, qall, ms);
 
 //  Fill qall with threads info
 //  Broadcast
@@ -182,7 +181,7 @@ init_replica_exchange(FILE                            *fplog,
                       float                             temp,
                       ReplicaExchangeParameters* replExParams)
 {
-    float                pres;
+    double                pres;
     int                 i, j, k;
     struct gmx_repl_ex *re;
     int            bTemp;
@@ -211,6 +210,7 @@ init_replica_exchange(FILE                            *fplog,
      * but it does guarantee that we can perform replica exchange.
      */
     const int nst = replExParams->exchangeInterval;
+    re->bNPT = replExParams->bNPT;
 
     re->temp = temp;
 
@@ -224,6 +224,25 @@ init_replica_exchange(FILE                            *fplog,
         printf("Error: The properties of the %d systems are all the same, there is nothing to exchange\n", re->nrepl);;
              exit(EXIT_FAILURE);
     }
+
+
+    if (re->bNPT){
+        re->pres = (double*)malloc((re->nrepl)*sizeof(double));
+        if (replExParams->replica_temps.size() != replExParams->replica_pressures.size()){
+            printf("Error : Number of temperatures %lu does not equal number of pressures %lu", replExParams->replica_temps.size(), replExParams->replica_pressures.size());
+            exit(EXIT_FAILURE);
+        }
+      
+        #pragma omp critical
+        { 
+            for ( int i = 0; i < re->nrepl; i++ ){
+                re->pres[i] = replExParams->replica_pressures[i];
+            }
+        }
+        #pragma omp barrier
+    }
+
+    
 
     /* Make an index for increasing replica order */
     /* only makes sense if one or the other is varying, not both!
@@ -291,6 +310,24 @@ init_replica_exchange(FILE                            *fplog,
             printf("Unknown replica exchange quantity");
             exit(EXIT_FAILURE);
             
+    }
+    
+    if (re->bNPT)
+    {
+        fprintf(fplog, "\nRepl  p");
+        for (i = 0; i < re->nrepl; i++)
+        {
+            fprintf(fplog, " %5.2f", re->pres[re->ind[i]]);
+        }
+
+        for (i = 0; i < re->nrepl; i++)
+        {
+            if ((i > 0) && (re->pres[re->ind[i]] < re->pres[re->ind[i-1]]))
+            {
+                fprintf(fplog, "\nWARNING: The reference pressures decrease with increasing temperatures\n\n");
+                fprintf(stderr, "\nWARNING: The reference pressures decrease with increasing temperatures\n\n");
+            }
+        }
     }
 
 
@@ -694,7 +731,7 @@ void
 test_for_replica_exchange(FILE                          *fplog,
                           struct gmx_repl_ex            *re,
                           float                         enerd,
-                          float                         vol,
+                          double                         vol,
                           int                           step,
                           ReplicaExchangeParameters*    replExParams,
                           Replica_State*                      state_global)
@@ -750,8 +787,19 @@ test_for_replica_exchange(FILE                          *fplog,
     /* now actually do the communication */
     if (bVol)
     {
-   // For NPT
-   //     gmx_sum_sim(re->nrepl, re->Vol, ms);
+        #pragma omp barrier
+        #pragma omp critical 
+        {        
+            replExParams->replica_volumes[re->repl] = vol;
+        }
+        #pragma omp barrier
+        
+        #pragma omp critical
+        {
+            for (int i = 0; i < re->nrepl; i++) 
+                re->Vol[i] = replExParams->replica_volumes[i];        
+        }
+        #pragma omp barrier
     }
     
     if (bEpot)
@@ -771,12 +819,6 @@ test_for_replica_exchange(FILE                          *fplog,
                 re->Epot[i] = replExParams->replica_energies[i];        
         }
         #pragma omp barrier
-
-/*        for (int i = 0; i < replExParams->replica_energies.size(); i++){
-            printf("GJS I am replica %d ; repl_energ[%d] = %f ; Epot[%d] = %f\n", re->repl, i, replExParams->replica_energies[i], i, re->Epot[i]);
-            cout.flush();
-        }*/
-
     }
     /* make a duplicate set of indices for shuffling */
     for (i = 0; i < re->nrepl; i++)
@@ -1035,7 +1077,7 @@ prepare_to_do_exchange(struct gmx_repl_ex *re,
 }
 
 int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
-                          Replica_State *state_global, float enerd,
+                          Replica_State *state_global, float enerd, double vol_par,
                           int step, ReplicaExchangeParameters* replExParams)
 {
     printf("GJS inside replica_exchange\n");
@@ -1053,7 +1095,7 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
         replica_id  = re->repl;
 
     // GJS figure out where vol is stored
-    float vol = 0.0;
+    double vol = vol_par;
 
     test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams, state_global);
     

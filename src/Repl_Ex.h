@@ -56,7 +56,11 @@ struct ReplicaExchangeParameters
         exchangeInterval(0),
         numExchanges(0),
         randomSeed(-1),
+        bNPT(0),
+        bNVT(0),
         replica_temps(),
+        replica_pressures(),
+        replica_volumes(),
         replica_energies()
      {
      };
@@ -64,7 +68,11 @@ struct ReplicaExchangeParameters
     int exchangeInterval; /* Interval in steps at which to attempt exchanges, 0 means no replica exchange */
     int numExchanges;     /* The number of exchanges to attempt at an exchange step */
     int randomSeed;       /* The random seed, -1 means generate a seed */
+    int bNPT;       
+    int bNVT;      
     std::vector<float> replica_temps;
+    std::vector<double> replica_pressures;
+    std::vector<double> replica_volumes;
     std::vector<float> replica_energies;
     Replica_State** replica_states;
 };
@@ -80,7 +88,9 @@ init_replica_exchange(FILE                            *fplog,
 
 int replica_exchange(FILE *fplog,
                           gmx_repl_ex_t re,
-                          Replica_State *state_global, float enerd,
+                          Replica_State *state_global, 
+                          float enerd,
+                          double vol,
                           int step,
                           ReplicaExchangeParameters* replExParams);
 /* Attempts replica exchange, should be called on all ranks.
