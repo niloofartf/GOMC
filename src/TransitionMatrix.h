@@ -101,8 +101,8 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 		nmax = totMolec;
 	}
 
-
-	TMfile.open(tmmc.outName + (std::string) "_TMFile.dat");		//TODO: make this an actual name
+	std::string title = "_TMfile.dat";
+	TMfile.open(tmmc.outName + title);		//TODO: make this an actual name
 	if (TMfile.is_open()) {
 		TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
 		TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
