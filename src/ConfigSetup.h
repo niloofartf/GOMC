@@ -246,6 +246,7 @@ struct TMMC {
   ulong step;
   int Nmin;
   int Nmax;
+  std::string outName;
 };
 
 struct UniqueStr { /* : ReadableBase*/

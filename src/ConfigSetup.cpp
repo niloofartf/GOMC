@@ -96,6 +96,7 @@ ConfigSetup::ConfigSetup(void)
   out.state.files.tmmc.step = ULONG_MAX;
   out.state.files.tmmc.Nmax = UINT_MAX;
   out.state.files.tmmc.Nmin = 0;
+  out.state.files.tmmc.outName = "";
 #endif
   out.statistics.settings.uniqueStr.val = "";
   out.state.settings.frequency = ULONG_MAX;
@@ -461,6 +462,7 @@ void ConfigSetup::Init(const char *fileName)
 #endif
     else if(line[0] == "OutputName") {
       out.statistics.settings.uniqueStr.val = line[1];
+	  out.state.files.tmmc.outName = line[1];
       printf("%-40s %-s \n", "Info: Output name", line[1].c_str());
     } else if(line[0] == "CoordinatesFreq") {
       out.state.settings.enable = checkBool(line[1]);

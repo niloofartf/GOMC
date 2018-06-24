@@ -53,9 +53,10 @@ public:
 	int nmax, nmin;						//Specify minimum and maximum molecule counts in simulation
 										//Important for TMMC because biasing allows extremely unlikely phase space explorations that
 										//do not impact on the final result, causing wasted calculations and CPU time.
-										//Nmin currently not implemented, but allows for parallelization via umbrella
+										//Nmin currently not implemented, but will allow for parallelization via umbrella
 
 	bool biasingOn;						//Config flag, turns biasing on or off.
+	ofstream TMfile;
 
 	uint molKind;						//Track what kind of molecule we're interested in; currently defaults to 0 
 										//(Current implementation works with single component systems only).
@@ -99,6 +100,12 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 		nmax = totMolec;
 	}
 
+
+	TMfile.open(tmmc.outName + "_TMFile.dat");		//TODO: make this an actual name
+	if (TMfile.is_open()) {
+		TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
+		TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
+	}
 	//nmin = tmmc.Nmin;
 	//if (nmin < 0) {
 	//	nmin = 0;
@@ -157,7 +164,7 @@ inline double TransitionMatrix::CalculateBias(int move)
 	{
 		return exp(weightingFunction[numMolecules] - weightingFunction[numMolecules - 1]);
 	}
-	else if (move == 1 && numMolecules != weightingFunction.size()-1)
+	else if (move == 1 && numMolecules != nmax)
 	{
 		return exp(weightingFunction[numMolecules] - weightingFunction[numMolecules + 1]);
 	}
@@ -189,6 +196,12 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 		  }
 		  weightingFunction[i] = weightingFunction[i - 1] + log(probInsert / probDelete);
 	  }
+	  if(TMfile.is_open()){
+		  for (int i = 0; i < nmax; i++) {
+			  TMfile << weightingFunction[i] << endl;
+		  }
+		  TMfile << endl;
+	  }
   }
 }
 
@@ -205,13 +218,13 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	}
 	std::cout << weightingFunction[nmax] << endl;
 
-	ofstream TMfile;
-	TMfile.open("TMFile.dat");		//TODO: make this an actual name
+	//ofstream TMfile;
+	//TMfile.open("TMFile.dat");		//TODO: make this an actual name
 	if (TMfile.is_open()) {
-		TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
-		TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
-		for (int i = 0; i < weightingFunction.size(); i++) {
-			TMfile << setw(16) << left << weightingFunction[i] << endl;
+		//TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
+		//TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
+		for (int i = 0; i < nmax; i++) {
+			TMfile << weightingFunction[i] << endl;
 		}
 	}
 	
