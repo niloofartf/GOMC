@@ -102,7 +102,7 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	}
 
 
-	TMfile.open(tmmc.outName + "_TMFile.dat");		//TODO: make this an actual name
+	TMfile.open(tmmc.outName + (std::string) "_TMFile.dat");		//TODO: make this an actual name
 	if (TMfile.is_open()) {
 		TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
 		TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
