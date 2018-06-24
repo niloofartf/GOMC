@@ -31,6 +31,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
+#include <string>
 
 #if ENSEMBLE == GCMC
 
