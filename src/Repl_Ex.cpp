@@ -199,7 +199,6 @@ init_replica_exchange(FILE                            *fplog,
 
     re = (gmx_repl_ex*)malloc(sizeof(gmx_repl_ex));
 
-    re->bNPT     = 0;
     re->repl     = omp_get_thread_num();
     re->nrepl    = omp_get_num_threads();
     re->q = (float**)malloc(sizeof(float*)*ereENDSINGLE);
@@ -383,6 +382,7 @@ init_replica_exchange(FILE                            *fplog,
         replExParams->replica_states = (Replica_State**)malloc(sizeof(Replica_State*)*re->nrepl);
         for (int i = 0; i < re->nrepl; i++){
             replExParams->replica_energies.push_back(0.0);
+            replExParams->replica_volumes.push_back(0.0);
         }
     }
 
@@ -736,7 +736,7 @@ test_for_replica_exchange(FILE                          *fplog,
                           ReplicaExchangeParameters*    replExParams,
                           Replica_State*                      state_global)
 {
-    printf("GJS inside test_for_replica_exchange\n");
+    //printf("GJS inside test_for_replica_exchange\n");
     int                                  m, i, j, a, b, ap, bp, i0, i1, tmp;
     float                                 delta = 0;
     int                             bPrint, bMultiEx;
@@ -1080,7 +1080,7 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
                           Replica_State *state_global, float enerd, double vol_par,
                           int step, ReplicaExchangeParameters* replExParams)
 {
-    printf("GJS inside replica_exchange\n");
+    //printf("GJS inside replica_exchange\n");
     int j;
     int replica_id = 0;
     int exchange_partner;
@@ -1095,9 +1095,9 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
         replica_id  = re->repl;
 
     // GJS figure out where vol is stored
-    double vol = vol_par;
+    //double vol = vol_par;
 
-    test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams, state_global);
+    test_for_replica_exchange(fplog, re, enerd, vol_par, step, replExParams, state_global);
     
     prepare_to_do_exchange(re, replica_id, &maxswap, &bThisReplicaExchanged);
 

@@ -43,3 +43,7 @@ Intel 2016 - MPI
 
 Load Module(Intel XXXX ; MPI ) 
 Job Script on Website to run simulation
+
+TODO:
+
+Run through a couple exchanges to make sure the replicas recognize their new states (i.e. continue with a new coords, energies, in NPT , new vol. ect)

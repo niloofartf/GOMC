@@ -62,12 +62,34 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
   //as system depends on staticValues, and cpu sometimes depends on both.
   Setup set;
   set.Init(configFileName, initiatingLoopIteration, replExParams);
+  printf("FAST I returned from set.Init\n");
   replica_log = set.config.out.statistics.settings.uniqueStr.val;
   replica_log += ".replica_log"; 
 // GJS
   usingRE = set.config.sys.usingRE;
+
   replica_temps = set.config.sys.T.replica_temps;
-  replExParams->replica_temps = set.config.sys.T.replica_temps;
+  #pragma omp barrier
+  #pragma omp single 
+  {
+    for (int i = 0; i < set.config.sys.T.replica_temps.size(); i++){
+        replExParams->replica_temps.push_back(set.config.sys.T.replica_temps[i]);
+    }
+  }
+  #pragma omp barrier
+ 
+#if ENSEMBLE == NPT
+  #pragma omp barrier
+  #pragma omp single 
+  {
+    for (int i = 0; i < set.config.sys.gemc.replica_pressures.size(); i++){
+        replExParams->replica_pressures.push_back(set.config.sys.gemc.replica_pressures[i]);
+    }    
+    replExParams->bNPT = 1;
+  }
+  #pragma omp barrier
+#endif
+
 // GJS
   totalSteps = set.config.sys.step.total;
   staticValues = new StaticVals(set);
@@ -149,13 +171,16 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
   FILE *fplog = fopen(replica_log.c_str(), "a");  
 
   const bool useReplicaExchange = (replExParams->exchangeInterval > 0);
-  
+ 
   if (useReplicaExchange){
     #pragma omp barrier          
       printf(" calling init w temp of %f\n", staticValues->forcefield.T_in_K);
       repl_ex = init_replica_exchange(fplog, staticValues->forcefield.T_in_K, replExParams);
     }
 
+#if ENSEMBLE == NVT
+  volume = 0.0;
+#endif
 
 // GJS
   double startEnergy = system->potential.totalEnergy.total;
@@ -182,18 +207,43 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
       }
     }
 
-    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0));
+  #pragma omp barrier          
+    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0) && ( step > cpu->equilSteps));
 
     if (bDoReplEx) {
   #pragma omp barrier          
        
             GetSystem(state_global, system);
+           
+#if ENSEMBLE == NPT
+            // These two prints should be equal.  Its a nice checker that the GetSys works and were keeping track of everything
+            //printf("OTTO repl id : %d, vol : %f\n", omp_get_thread_num(), system->boxDimensions->GetTotVolume());
+            //printf("OTTO repl id : %d, vol : %f\n", omp_get_thread_num(), (*(state_global->boxDimensions))->GetTotVolume());
             bExchanged = replica_exchange(fplog, repl_ex,
                                            state_global, system->potential.totalEnergy.total,
+                                           (*(state_global->boxDimensions))->GetTotVolume(),
                                            step, replExParams);
+#endif 
+#if ENSEMBLE == NVT
+            // These two prints should be equal.  Its a nice checker that the GetSys works and were keeping track of everything
+            //printf("OTTO repl id : %d, vol : %f\n", omp_get_thread_num(), system->boxDimensions->GetTotVolume());
+//            printf("OTTO repl id : %d, vol : %f\n", omp_get_thread_num(), volume);
+            bExchanged = replica_exchange(fplog, repl_ex,
+                                           state_global, system->potential.totalEnergy.total,
+                                           volume,
+                                           step, replExParams);
+#endif 
             if (bExchanged){
+                #pragma omp barrier
+                printf("GJS Step : %lu, before repl : %d ; system epot : %f\n", step, repl_ex->repl, system->potential.totalEnergy.total);
+                printf("GJS Step : %lu, before repl : %d ; global array epot : %f\n", step, repl_ex->repl, replExParams->replica_energies[repl_ex->repl]);
+                #pragma omp barrier
                 state_global = replExParams->replica_states[repl_ex->repl];
-                SetSystem(state_global, system);
+                //SetSystem(state_global, system);
+                #pragma omp barrier
+                printf("GJS Step : %lu, after repl : %d ; system epot : %f\n", step, repl_ex->repl, system->potential.totalEnergy.total);
+                printf("GJS Step : %lu, after repl : %d ; global array epot : %f\n", step, repl_ex->repl, replExParams->replica_energies[repl_ex->repl]);
+                #pragma omp barrier
             }
     }
 
@@ -253,6 +303,9 @@ void Simulation::GetSystem(Replica_State* state_get, System* system_get){
     state_get->coordinates = &(system_get->coordinates);
     state_get->cellList = &(system_get->cellList);
     state_get->calcEwald = &(system_get->calcEwald);
+#if ENSEMBLE == NPT
+    state_get->boxDimensions = &(system_get->boxDimensions);
+#endif
 
 }
 
@@ -263,5 +316,8 @@ void Simulation::SetSystem(Replica_State* state_set, System* system_set){
     system_set->coordinates = *(state_set->coordinates);
     system_set->cellList = *(state_set->cellList);
     system_set->calcEwald = *(state_set->calcEwald);
+#if ENSEMBLE == NPT
+    system_set->boxDimensions = *(state_set->boxDimensions);
+#endif
 
 }

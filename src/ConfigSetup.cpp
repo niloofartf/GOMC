@@ -353,7 +353,12 @@ void ConfigSetup::Init(const char *fileName)
       sys.step.adjustment = stringtoi(line[1]);
       printf("%-40s %-lu \n", "Info: Move adjustment frequency",
              sys.step.adjustment);
-    } else if(line[0] == "PressureCalc") {
+    } 
+
+    else if(line[0] == "ExchSteps") {
+    }
+
+    else if(line[0] == "PressureCalc") {
       sys.step.pressureCalc = checkBool(line[1]);
       if(line.size() == 3)
         sys.step.pressureCalcFreq = stringtoi(line[2]);
