@@ -165,8 +165,8 @@ inline void MoleculeTransfer::Accept(const uint rejectState, const uint step)
 		double acceptance = molTransCoeff * Wrat;
 		#if	ENSEMBLE == GCMC
 			//Ensure no insertion proceeds past Nmax or deletion past Nmin (Nmin not enforced yet)
-			if (transitionMatrixRef.biasingOn && (sourceBox == mv::BOX1 && molLookRef.NumKindInBox(transitionMatrixRef.molKind, mv::BOX0) >= transitionMatrixRef.nmax) 
-				|| (sourceBox == mv::BOX0 && molLookRef.NumKindInBox(transitionMatrixRef.molKind, mv::BOX1) <= transitionMatrixRef.nmin)) 
+			if (transitionMatrixRef.biasingOn && ((sourceBox == mv::BOX1 && molLookRef.NumKindInBox(transitionMatrixRef.molKind, mv::BOX0) >= transitionMatrixRef.nmax) 
+				|| (sourceBox == mv::BOX0 && molLookRef.NumKindInBox(transitionMatrixRef.molKind, mv::BOX1) <= transitionMatrixRef.nmin))) 
 			{
 				acceptance = 0.0;
 			}
