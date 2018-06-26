@@ -107,10 +107,10 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 		TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
 		TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
 	}
-	//nmin = tmmc.Nmin;
-	//if (nmin < 0) {
-	//	nmin = 0;
-	//}
+	nmin = tmmc.Nmin;
+	if (nmin < 0) {
+		nmin = 0;
+	}
 
 	//del/etc/ins, del/etc/ins, ... 
 	transitionMatrix.resize(3 * (nmax+1));
@@ -161,11 +161,11 @@ inline double TransitionMatrix::CalculateBias(int move)
 
 	uint numMolecules = molLookRef.NumKindInBox(molKind, mv::BOX0);
 	//move == 0: deletion move; move == 1: insertion move
-	if (move == 0 && numMolecules != 0)
+	if (move == 0)// && numMolecules > nmin)
 	{
 		return exp(weightingFunction[numMolecules] - weightingFunction[numMolecules - 1]);
 	}
-	else if (move == 1 && numMolecules != nmax)
+	else if (move == 1 && numMolecules < nmax)
 	{
 		return exp(weightingFunction[numMolecules] - weightingFunction[numMolecules + 1]);
 	}
@@ -198,7 +198,7 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 		  weightingFunction[i] = weightingFunction[i - 1] + log(probInsert / probDelete);
 	  }
 	  if(TMfile.is_open()){
-		  for (int i = 0; i < nmax; i++) {
+		  for (int i = nmin; i < nmax; i++) {
 			  TMfile << weightingFunction[i] << endl;
 		  }
 		  TMfile << endl;
@@ -214,7 +214,7 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	UpdateWeightingFunction(biasStep - 1);
 
 	std::cout << "\nTM Particle Number Probability Distribution:\n";
-	for (int i = 0; i < nmax; i++) {
+	for (int i = nmin; i < nmax; i++) {
 		std::cout << weightingFunction[i] << ",";
 	}
 	std::cout << weightingFunction[nmax] << endl;
