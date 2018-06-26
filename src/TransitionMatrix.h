@@ -198,8 +198,9 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 		  weightingFunction[i] = weightingFunction[i - 1] + log(probInsert / probDelete);
 	  }
 	  if(TMfile.is_open()){
+		  TMfile << "Step count: " << step + 1 << endl;
 		  for (int i = nmin; i < nmax; i++) {
-			  TMfile << weightingFunction[i] << endl;
+			  TMfile << weightingFunction[i] << ",";
 		  }
 		  TMfile << endl;
 	  }
