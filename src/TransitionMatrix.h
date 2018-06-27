@@ -129,10 +129,8 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 		acceptanceProbability = 1.0;
 
 	//move == 0: deletion move; move == 1: insertion move
-	//During all moves except insertion, number of molecules reported in system is 1 less than actual
 	if (move == 0)
 	{
-		numMolecules += 1;
 		transitionMatrix[GetTMDelIndex(numMolecules)] += acceptanceProbability;
 		transitionMatrix[GetTMEtcIndex(numMolecules)] += 1.0 - acceptanceProbability;
 	}
@@ -145,8 +143,7 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 
 inline void TransitionMatrix::IncrementAcceptanceProbability(int molKind)
 {
-	//During all moves except insertion, number of molecules reported in system is 1 less than actual
-	transitionMatrix[GetTMEtcIndex(molLookRef.NumKindInBox(molKind, mv::BOX0) + 1)] += 1.0;
+	transitionMatrix[GetTMEtcIndex(molLookRef.NumKindInBox(molKind, mv::BOX0))] += 1.0;
 }
 
 //Calculates the bias to be applied to GCMC insertion/deletion moves from the transition transitionMatrix.
@@ -159,10 +156,6 @@ inline double TransitionMatrix::CalculateBias(int move)
 
 	uint numMolecules = molLookRef.NumKindInBox(molKind, mv::BOX0);
 	//move == 0: deletion move; move == 1: insertion move
-	//During all moves except insertion, number of molecules reported in system is 1 less than actual
-	if (move == 0) {
-		numMolecules += 1;
-	}
 
 	if (move == 0 && numMolecules >nmin)
 	{
