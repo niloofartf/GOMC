@@ -14,14 +14,13 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "BasicTypes.h"
 
 #include "Repl_Ex.h"
-
+#include <omp.h>
 
 class Simulation
 {
 public:
 // GJS  
   bool usingRE;
-  int numberOfAtoms;
   std::string replica_log;
   std::vector<float> replica_temps;
 // GJS
@@ -31,9 +30,9 @@ public:
   ~Simulation();
 
   void RunSimulation(void);
-  void RunSimulation(ReplicaExchangeParameters* replExParams);
-  void GetSystem(Replica_State* state_get, System* system_get);
-  void SetSystem(Replica_State* state_set, System* system_set);
+  void RunSimulation(ReplicaExchangeParameters* replExParams, Simulation** sim_exchangers);
+  void GetTemp(System* system, Simulation* sim);
+  void SetTemp(System* system_set, Simulation* sim);
 
 #ifndef NDEBUG
   void RunningCheck(const uint step);

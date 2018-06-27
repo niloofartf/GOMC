@@ -26,6 +26,7 @@ Simulation::Simulation(char const*const configFileName)
   Setup set;
   set.Init(configFileName);
 // GJS
+  int numberOfAtoms;
   usingRE = set.config.sys.usingRE;
   replica_temps = set.config.sys.T.replica_temps;
 // GJS
@@ -67,7 +68,11 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
 // GJS
   usingRE = set.config.sys.usingRE;
   replica_temps = set.config.sys.T.replica_temps;
-  replExParams->replica_temps = set.config.sys.T.replica_temps;
+
+  #pragma omp single
+  {
+    replExParams->replica_temps = set.config.sys.T.replica_temps;
+  }
 // GJS
   totalSteps = set.config.sys.step.total;
   staticValues = new StaticVals(set);
@@ -134,13 +139,14 @@ void Simulation::RunSimulation(void)
 }
 
 
-void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
+void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams, Simulation** sim_exchangers)
 {
 
   std::cout << "GJS" << omp_get_thread_num() << std::endl;
   gmx_repl_ex_t     repl_ex = nullptr;
 
-  Replica_State * state_global = new Replica_State();
+  Replica_State * state_local = new Replica_State();
+  Replica_State * state_global = state_local;
 
   int bFirstStep, bInitStep, bLastStep = false;
 
@@ -159,7 +165,8 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
 
 // GJS
   double startEnergy = system->potential.totalEnergy.total;
-  
+    
+ 
   bFirstStep       = true;
 
   // Find out where the flag for a restart is located and set this accordingly GJS
@@ -168,6 +175,7 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
   bInitStep        = !startingFromCheckpoint;
 
   for (ulong step = 0; step < totalSteps; step++) {
+
     system->moveSettings.AdjustMoves(step);
     system->ChooseAndRunMove(step);
     cpu->Output(step);
@@ -182,21 +190,30 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams)
       }
     }
 
-    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0));
+  
+    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0) && step > cpu->equilSteps);
 
     if (bDoReplEx) {
-  #pragma omp barrier          
-       
-            GetSystem(state_global, system);
+    #pragma omp barrier          
+            printf("GJS Step : %lu, repl : %d, b4 exch : system->epot = %f\n", step, repl_ex->repl, system->potential.totalEnergy.total);
             bExchanged = replica_exchange(fplog, repl_ex,
-                                           state_global, system->potential.totalEnergy.total,
+                                           state_local, system->potential.totalEnergy.total,
                                            step, replExParams);
-            if (bExchanged){
-                state_global = replExParams->replica_states[repl_ex->repl];
-                SetSystem(state_global, system);
+   
+            if (bExchanged != repl_ex->repl){
+                SetTemp(system, sim_exchangers[bExchanged]);        
             }
-    }
-
+ 
+            #pragma omp barrier          
+            
+            if (bExchanged != repl_ex->repl){
+                GetTemp(system, sim_exchangers[repl_ex->repl]); 
+            }
+            
+            #pragma omp barrier          
+            
+            printf("GJS Step : %lu, repl : %d, after exch : system->epot = %f\n", step, repl_ex->repl, system->potential.totalEnergy.total);
+        }
 #ifndef NDEBUG
     if((step + 1) % 1000 == 0)
       RunningCheck(step);
@@ -246,22 +263,25 @@ void Simulation::RunningCheck(const uint step)
 }
 #endif
 
-void Simulation::GetSystem(Replica_State* state_get, System* system_get){
+void Simulation::GetTemp(System* system, Simulation* sim){
 
-    state_get->potential = &(system_get->potential);
-    state_get->com = &(system_get->com);
-    state_get->coordinates = &(system_get->coordinates);
-    state_get->cellList = &(system_get->cellList);
-    state_get->calcEwald = &(system_get->calcEwald);
+    system->potential = sim->system->potential;
+    system->com = sim->system->com;
+    system->coordinates = sim->system->coordinates;
+//    state_get->cellList = &system_get.cellList;
+//    state_get->calcEwald = &system_get.calcEwald;
 
 }
 
-void Simulation::SetSystem(Replica_State* state_set, System* system_set){
+void Simulation::SetTemp(System* system_set, Simulation* sim){
+    
+    sim->system->potential = system_set->potential;
+    sim->system->com = system_set->com;
+    sim->system->coordinates = system_set->coordinates;
+    
+  //  *(state_global->com) = sim->system->com;
+  //  *(state_global->coordinates) = sim->system->coordinates;
 
-    system_set->potential = *(state_set->potential);
-    system_set->com = *(state_set->com);
-    system_set->coordinates = *(state_set->coordinates);
-    system_set->cellList = *(state_set->cellList);
-    system_set->calcEwald = *(state_set->calcEwald);
-
+//    system_set->cellList = *(state_set->cellList);
+//    system_set->calcEwald = *(state_set->calcEwald);
 }

@@ -134,8 +134,14 @@ int main(int argc, char *argv[])
         std::cout << "I recognize you want to use NVT-RE since usingRE is true.\n " << std::endl; 
         
         int num_replicas = sim.replica_temps.size();
+
         std::cout << "num replicas : " << num_replicas << "\n " << std::endl; 
         
+        Simulation* sim_exchangers[num_replicas];
+
+        for (int i = 0 ; i < num_replicas; i++) {
+            sim_exchangers[i] = new Simulation(inputFileString.c_str());
+        }
 
         if (num_replicas > numThreads){
           std::cout << "Error: Not enough threads!\n";
@@ -144,15 +150,16 @@ int main(int argc, char *argv[])
         }
                
         int i;
+        int counter;
 
         Simulation* sim_re[num_replicas];
         ReplicaExchangeParameters replExParams;
 
-        #pragma omp parallel for default(none) private(i) shared(num_replicas, inputFileString, sim_re, replExParams)
+        #pragma omp parallel for default(none) private(i) shared(num_replicas, inputFileString, sim_re, replExParams, sim_exchangers)
             for (i = 0; i < num_replicas; i++) {
                 sim_re[i] = new Simulation(inputFileString.c_str(), i, &replExParams);
              // overloaded RunSim for RE
-                sim_re[i]->RunSimulation(&replExParams);
+                sim_re[i]->RunSimulation(&replExParams, sim_exchangers);
             }
     }
     // GJS

@@ -294,9 +294,6 @@ init_replica_exchange(FILE                            *fplog,
     }
 
 
-    re->nst = replExParams->exchangeInterval;
-
-    re->seed = replExParams->randomSeed;
 
 
     fprintf(fplog, "\nReplica exchange interval: %d\n", re->nst);
@@ -343,11 +340,11 @@ init_replica_exchange(FILE                            *fplog,
 
     #pragma omp single 
     { 
-        replExParams->replica_states = (Replica_State**)malloc(sizeof(Replica_State*)*re->nrepl);
-        for (int i = 0; i < re->nrepl; i++){
-            replExParams->replica_energies.push_back(0.0);
+        for ( int i = 0; i < re->nrepl; i++ ){ 
+            replExParams->replica_energies.push_back(0);
         }
     }
+    
 
     re->de = (float**)malloc((re->nrepl)*sizeof(float*));
     
@@ -366,9 +363,11 @@ init_replica_exchange(FILE                            *fplog,
         }
     }
 
- 
     re->nex = replExParams->numExchanges;
-    printf("I finished intializing\n");
+    re->nst = replExParams->exchangeInterval;
+    re->seed = replExParams->randomSeed;
+    
+    #pragma omp barrier
     return re;
 }
 
@@ -468,7 +467,6 @@ static void print_transition_matrix(FILE *fplog, int n, int **nmoves, int *natte
     float Tprint;
 
     ntot = nattempt[0] + nattempt[1];
-    printf("YOGA %d\n", ntot);
     fprintf(fplog, "\n");
     fprintf(fplog, "Repl");
     for (i = 0; i < n; i++)
@@ -699,7 +697,6 @@ test_for_replica_exchange(FILE                          *fplog,
                           ReplicaExchangeParameters*    replExParams,
                           Replica_State*                      state_global)
 {
-    printf("GJS inside test_for_replica_exchange\n");
     int                                  m, i, j, a, b, ap, bp, i0, i1, tmp;
     float                                 delta = 0;
     int                             bPrint, bMultiEx;
@@ -715,7 +712,7 @@ test_for_replica_exchange(FILE                          *fplog,
 
     bMultiEx = (re->nex > 1);  /* multiple exchanges at each state */
     fprintf(fplog, "Replica exchange at step %d\n", step);
-
+    cout.flush();
     if (re->bNPT)
     {
         for (i = 0; i < re->nrepl; i++)
@@ -759,9 +756,8 @@ test_for_replica_exchange(FILE                          *fplog,
         #pragma omp barrier
         #pragma omp critical 
         {        
-            replExParams->replica_energies[re->repl] = enerd;
+        replExParams->replica_energies[re->repl] = enerd;
 
-            replExParams->replica_states[re->repl] = state_global;
         }
         #pragma omp barrier
         
@@ -771,11 +767,6 @@ test_for_replica_exchange(FILE                          *fplog,
                 re->Epot[i] = replExParams->replica_energies[i];        
         }
         #pragma omp barrier
-
-/*        for (int i = 0; i < replExParams->replica_energies.size(); i++){
-            printf("GJS I am replica %d ; repl_energ[%d] = %f ; Epot[%d] = %f\n", re->repl, i, replExParams->replica_energies[i], i, re->Epot[i]);
-            cout.flush();
-        }*/
 
     }
     /* make a duplicate set of indices for shuffling */
@@ -841,7 +832,6 @@ test_for_replica_exchange(FILE                          *fplog,
                 pind[i-1] = pind[i];
                 pind[i]   = tmp;
                 re->nexchange[i]++;  /* statistics for back compatibility */
-                printf("YOGA repl : %d, i : %d, numexch : %d\n", re->repl, i, re->nexchange[i]);  /* statistics for back compatibility */
             }
         }
         else
@@ -1038,7 +1028,6 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
                           Replica_State *state_global, float enerd,
                           int step, ReplicaExchangeParameters* replExParams)
 {
-    printf("GJS inside replica_exchange\n");
     int j;
     int replica_id = 0;
     int exchange_partner;
@@ -1054,7 +1043,6 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
 
     // GJS figure out where vol is stored
     float vol = 0.0;
-
     test_for_replica_exchange(fplog, re, enerd, vol, step, replExParams, state_global);
     
     prepare_to_do_exchange(re, replica_id, &maxswap, &bThisReplicaExchanged);
@@ -1071,30 +1059,20 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
             {
                 exchange_partner = re->order[replica_id][j];
 
-                if (exchange_partner != replica_id && (replica_id % 2 == 0))
+                if ((exchange_partner != replica_id))
                 {
                     /* Exchange the global states between the master nodes */
-                    printf("GJS Exchanging %d with %d\n", replica_id, exchange_partner);
+                    printf("GJS Exchanging %d with %d, step : %d, m : %d\n", replica_id, exchange_partner, step, step / replExParams->exchangeInterval % 2);
+                    return exchange_partner;
                     //exchange_state(state, exchange_partner, replExParams);
-                    state_global = replExParams->replica_states[exchange_partner];
-                    std::swap(replExParams->replica_states[replica_id], replExParams->replica_states[exchange_partner]);
-
                 }
-            }
-            /* For temperature-type replica exchange, we need to scale
-             * the velocities. */
-            if (re->type == ereTEMP || re->type == ereTL)
-            {
-                //scale_velocities(state, sqrt(re->q[ereTEMP][replica_id]/re->q[ereTEMP][re->destinations[replica_id]]));
+                
             }
 
             /* Copy the global state to the local state data structure */
             //copy_state_serial(state, state_local);
     }
-
-    #pragma omp barrier
-
-    return bThisReplicaExchanged;
+    return replica_id;
 }
 
 void print_replica_exchange_statistics(FILE *fplog, struct gmx_repl_ex *re)
@@ -1147,4 +1125,5 @@ void print_replica_exchange_statistics(FILE *fplog, struct gmx_repl_ex *re)
     /* print the transition matrix */
     print_transition_matrix(fplog, re->nrepl, re->nmoves, re->nattempt);
 }
+
 

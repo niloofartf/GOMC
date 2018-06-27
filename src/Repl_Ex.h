@@ -66,7 +66,6 @@ struct ReplicaExchangeParameters
     int randomSeed;       /* The random seed, -1 means generate a seed */
     std::vector<float> replica_temps;
     std::vector<float> replica_energies;
-    Replica_State** replica_states;
 };
 
 /* Abstract type for replica exchange */
@@ -74,7 +73,7 @@ typedef struct gmx_repl_ex *gmx_repl_ex_t;
 
 gmx_repl_ex_t
 init_replica_exchange(FILE                            *fplog,
-                      float                      temp,
+                      float                             temp,
                       ReplicaExchangeParameters* replExParams);
 /* Should only be called on the master ranks */
 
