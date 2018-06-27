@@ -53,27 +53,23 @@ public:
 	void PrintTMProbabilityDistribution();
 	int nmax, nmin;						//Specify minimum and maximum molecule counts in simulation
 										//Important for TMMC because biasing allows extremely unlikely phase space explorations that
-										//do not impact on the final result, causing wasted calculations and CPU time.
-										//Nmin currently not implemented, but will allow for parallelization via umbrella
+										//do not impact on the final result, causing wasted calculations and CPU time unless restricted.
 
 	bool biasingOn;						//Config flag, turns biasing on or off.
 	ofstream TMfile;
 
 	uint molKind;						//Track what kind of molecule we're interested in; currently defaults to 0 
 										//(Current implementation works with single component systems only).
-										//If user can select a component to track, adsorption/absorption sims become possible.
+										//If can select a component to track, adsorption/absorption sims become possible.
 
 private:
   const MoleculeLookup& molLookRef;	//Used to reference number of molecules of interest in the main box
   const BoxDimensions& currentAxes;     //Used for volume
   const Forcefield& forcefield;			//Used for temperature
   ulong biasStep;                       //Biasing steps
-  double boxVolume, temperature;// , vaporPressure, surfaceTension, vaporDensity, liquidDensity;
+  double boxVolume, temperature;
   int INITIAL_WEIGHTINGFUNCTION_VALUE;
   
-  
-
-  //std::vector<double> PostProcessTransitionMatrix();
   int GetTMDelIndex(int numMolec);
   int GetTMEtcIndex(int numMolec);
   int GetTMInsIndex(int numMolec);
@@ -100,29 +96,28 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	else {
 		nmax = totMolec;
 	}
-
+	nmin = tmmc.Nmin;
+	if (nmin < 0) {
+		nmin = 0;
+	}
 	std::string title = tmmc.outName + "_TMfile.dat";
 	TMfile.open(title.c_str());		//TODO: make this an actual name
 	if (TMfile.is_open()) {
 		TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
 		TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
 	}
-	nmin = tmmc.Nmin;
-	if (nmin < 0) {
-		nmin = 0;
-	}
 
 	//del/etc/ins, del/etc/ins, ... 
-	transitionMatrix.resize(3 * (nmax+1));
+	transitionMatrix.resize(3 * (nmax+1-nmin));
 	for (int i = 0; i < transitionMatrix.size(); i++) { transitionMatrix[i] = 0.0; }
 
-	weightingFunction.resize(totMolec);
+	weightingFunction.resize(nmax+1);
 	for (int i = 0; i < weightingFunction.size(); i++) { weightingFunction[i] = INITIAL_WEIGHTINGFUNCTION_VALUE; }
 }
 
-inline int TransitionMatrix::GetTMDelIndex(int numMolec) { return numMolec * 3; }
-inline int TransitionMatrix::GetTMEtcIndex(int numMolec) { return numMolec * 3 + 1; }
-inline int TransitionMatrix::GetTMInsIndex(int numMolec) { return numMolec * 3 + 2; }
+inline int TransitionMatrix::GetTMDelIndex(int numMolec) { return (numMolec-nmin) * 3; }
+inline int TransitionMatrix::GetTMEtcIndex(int numMolec) { return (numMolec-nmin) * 3 + 1; }
+inline int TransitionMatrix::GetTMInsIndex(int numMolec) { return (numMolec-nmin) * 3 + 2; }
 
 //Adds acceptance probability from GCMC particle insertion and deletion moves to the transitionMatrix vector
 inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbability, int move)
@@ -134,8 +129,10 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 		acceptanceProbability = 1.0;
 
 	//move == 0: deletion move; move == 1: insertion move
+	//During all moves except insertion, number of molecules reported in system is 1 less than actual
 	if (move == 0)
 	{
+		numMolecules += 1;
 		transitionMatrix[GetTMDelIndex(numMolecules)] += acceptanceProbability;
 		transitionMatrix[GetTMEtcIndex(numMolecules)] += 1.0 - acceptanceProbability;
 	}
@@ -148,7 +145,8 @@ inline void TransitionMatrix::AddAcceptanceProbToMatrix(double acceptanceProbabi
 
 inline void TransitionMatrix::IncrementAcceptanceProbability(int molKind)
 {
-	transitionMatrix[GetTMEtcIndex(molLookRef.NumKindInBox(molKind, mv::BOX0))] += 1.0;
+	//During all moves except insertion, number of molecules reported in system is 1 less than actual
+	transitionMatrix[GetTMEtcIndex(molLookRef.NumKindInBox(molKind, mv::BOX0) + 1)] += 1.0;
 }
 
 //Calculates the bias to be applied to GCMC insertion/deletion moves from the transition transitionMatrix.
@@ -161,9 +159,14 @@ inline double TransitionMatrix::CalculateBias(int move)
 
 	uint numMolecules = molLookRef.NumKindInBox(molKind, mv::BOX0);
 	//move == 0: deletion move; move == 1: insertion move
-	if (move == 0)// && numMolecules > nmin)
+	//During all moves except insertion, number of molecules reported in system is 1 less than actual
+	if (move == 0) {
+		numMolecules += 1;
+	}
+
+	if (move == 0 && numMolecules >nmin)
 	{
-		return exp(weightingFunction[numMolecules] - weightingFunction[numMolecules - 1]);
+		return exp(weightingFunction[numMolecules] - weightingFunction[numMolecules-1]);
 	}
 	else if (move == 1 && numMolecules < nmax)
 	{
@@ -184,13 +187,13 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
   if((step + 1) % biasStep == 0) {
 	  weightingFunction[0] = INITIAL_WEIGHTINGFUNCTION_VALUE;
 
-	  double sumEntry, sumEntryPlusOne, probInsert, probDelete;
+	  double sumEntryMinusOne, sumEntry, probInsert, probDelete;
 	  for (int i = 1; i<weightingFunction.size(); i++) {
-		  sumEntry = transitionMatrix[GetTMDelIndex(i - 1)] + transitionMatrix[GetTMEtcIndex(i - 1)] + transitionMatrix[GetTMInsIndex(i - 1)];
-		  sumEntryPlusOne = transitionMatrix[GetTMDelIndex(i)] + transitionMatrix[GetTMEtcIndex(i)] + transitionMatrix[GetTMInsIndex(i)];
-		  if ((sumEntry > 0.0) && (sumEntryPlusOne > 0.0) && (transitionMatrix[GetTMInsIndex(i - 1)] > 0.0) && (transitionMatrix[GetTMDelIndex(i)] > 0.0)) {
-			  probInsert = transitionMatrix[GetTMInsIndex(i - 1)] / sumEntry;
-			  probDelete = transitionMatrix[GetTMDelIndex(i)] / sumEntryPlusOne;
+		  sumEntryMinusOne = transitionMatrix[GetTMDelIndex(i - 1)] + transitionMatrix[GetTMEtcIndex(i - 1)] + transitionMatrix[GetTMInsIndex(i - 1)];
+		  sumEntry = transitionMatrix[GetTMDelIndex(i)] + transitionMatrix[GetTMEtcIndex(i)] + transitionMatrix[GetTMInsIndex(i)];
+		  if ((sumEntryMinusOne > 0.0) && (sumEntry > 0.0) && (transitionMatrix[GetTMInsIndex(i - 1)] > 0.0) && (transitionMatrix[GetTMDelIndex(i)] > 0.0)) {
+			  probInsert = transitionMatrix[GetTMInsIndex(i - 1)] / sumEntryMinusOne;
+			  probDelete = transitionMatrix[GetTMDelIndex(i)] / sumEntry;
 		  } else {
 			  probInsert = 1.0;
 			  probDelete = 1.0;
@@ -225,7 +228,7 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 	if (TMfile.is_open()) {
 		//TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
 		//TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
-		for (int i = 0; i < nmax; i++) {
+		for (int i = nmin; i <= nmax; i++) {
 			TMfile << weightingFunction[i] << endl;
 		}
 	}
