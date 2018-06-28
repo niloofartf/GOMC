@@ -265,23 +265,19 @@ void Simulation::RunningCheck(const uint step)
 
 void Simulation::GetTemp(System* system, Simulation* sim){
 
-    system->potential = sim->system->potential;
-    system->com = sim->system->com;
+    system->potential   = sim->system->potential;
+    system->com         = sim->system->com;
     system->coordinates = sim->system->coordinates;
-//    state_get->cellList = &system_get.cellList;
+    system->cellList    = sim->system->cellList;
 //    state_get->calcEwald = &system_get.calcEwald;
 
 }
 
 void Simulation::SetTemp(System* system_set, Simulation* sim){
     
-    sim->system->potential = system_set->potential;
-    sim->system->com = system_set->com;
+    sim->system->potential   = system_set->potential;
+    sim->system->com         = system_set->com;
     sim->system->coordinates = system_set->coordinates;
-    
-  //  *(state_global->com) = sim->system->com;
-  //  *(state_global->coordinates) = sim->system->coordinates;
-
-//    system_set->cellList = *(state_set->cellList);
+    sim->system->cellList    = system_set->cellList;   
 //    system_set->calcEwald = *(state_set->calcEwald);
 }

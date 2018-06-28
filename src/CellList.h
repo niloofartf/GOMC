@@ -23,6 +23,32 @@ class CellList
 {
 public:
   explicit CellList(const Molecules& mols, BoxDimensions& dims);
+  
+  CellList& operator=(CellList const& rhs){
+
+    list = rhs.list;
+
+    for (int i = 0; i < BOX_TOTAL; i++){
+        neighbors[i] = rhs.neighbors[i];
+        head[i]      = rhs.head[i];
+        cellSize[i]  = rhs.cellSize[i];
+        for (int j = 0; j < 3; j++){
+            edgeCells[i][j] = rhs.edgeCells[i][j];
+        }
+    }
+
+    // Molecules is kinda complex and doesnt have a cc, rats!
+    // Here is where molecules cc goes
+
+    // I think this will work
+    dimensions = rhs.dimensions;
+
+    cutoff = rhs.cutoff;
+    isBuilt = rhs.isBuilt;
+
+    return *this;
+}
+
 
   void SetCutoff(double cut)
   {
