@@ -49,6 +49,8 @@ public:
   Ewald(StaticVals & stat, System & sys);
   ~Ewald();
 
+  Ewald& operator=(Ewald const& rhs);
+
   virtual void Init();
 
   virtual void AllocMem();
@@ -116,6 +118,7 @@ public:
   virtual void exgMolCache();
 
   virtual void UpdateVectorsAndRecipTerms();
+
 
 private:
   double currentEnergyRecip[BOXES_WITH_U_NB];
