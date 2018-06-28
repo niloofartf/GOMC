@@ -196,7 +196,7 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 	  if(TMfile.is_open()){
 		  TMfile << "Step count: " << step + 1 << endl;
 		  for (int i = nmin; i < nmax; i++) {
-			  TMfile << weightingFunction[i] << ",";
+			  TMfile << weightingFunction[i] - INITIAL_WEIGHTINGFUNCTION_VALUE << ",";
 		  }
 		  TMfile << endl;
 	  }
@@ -212,9 +212,9 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 
 	std::cout << "\nTM Particle Number Probability Distribution:\n";
 	for (int i = nmin; i < nmax; i++) {
-		std::cout << weightingFunction[i] << ",";
+		std::cout << weightingFunction[i] - INITIAL_WEIGHTINGFUNCTION_VALUE << ",";
 	}
-	std::cout << weightingFunction[nmax] << endl;
+	std::cout << weightingFunction[nmax] - INITIAL_WEIGHTINGFUNCTION_VALUE << endl;
 
 	//ofstream TMfile;
 	//TMfile.open("TMFile.dat");		//TODO: make this an actual name
@@ -222,7 +222,7 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 		//TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
 		//TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
 		for (int i = nmin; i <= nmax; i++) {
-			TMfile << weightingFunction[i] << endl;
+			TMfile << weightingFunction[i] - INITIAL_WEIGHTINGFUNCTION_VALUE << endl;
 		}
 	}
 	
