@@ -118,13 +118,24 @@ int main(int argc, char *argv[])
 
     Simulation sim(inputFileString.c_str());
     // GJS
+#if ENSEMBLE == NPT || ENSEMBLE == NVT
     bool usingRE = sim.usingRE;
-    //&replExchangeParameter
+#endif
 
+#if ENSEMBLE == NPT || ENSEMBLE == NVT
+    int num_replicas = sim.replica_temps.size();
+#endif
 
+#if ENSEMBLE == NPT
+    int num_pressures = sim.replica_pressures.size();
+#endif
+
+#if ENSEMBLE == NPT || ENSEMBLE == NVT
     if (!usingRE){
+#endif
         sim.RunSimulation();
         PrintSimulationFooter();
+#if ENSEMBLE == NPT || ENSEMBLE == NVT
     } else {
         // Make N copies of sim
         // Set each with a temp value
@@ -133,14 +144,14 @@ int main(int argc, char *argv[])
         // PrintSimulationFooter();
         std::cout << "I recognize you want to use NVT-RE since usingRE is true.\n " << std::endl; 
         
-        int num_replicas = sim.replica_temps.size();
-
         std::cout << "num replicas : " << num_replicas << "\n " << std::endl; 
         
+        Simulation* sim_re[num_replicas];
         Simulation* sim_exchangers[num_replicas];
+        ReplicaExchangeParameters replExParams;
 
         for (int i = 0 ; i < num_replicas; i++) {
-            sim_exchangers[i] = new Simulation(inputFileString.c_str());
+            sim_exchangers[i] = new Simulation(inputFileString.c_str(), i, &replExParams);
         }
 
         if (num_replicas > numThreads){
@@ -148,12 +159,11 @@ int main(int argc, char *argv[])
           std::cout << "Use  a 1:1 ratio of replicas:threads.\n";
           exit(EXIT_FAILURE);
         }
-               
-        int i;
+                  
+        exit(0);
+ 
         int counter;
-
-        Simulation* sim_re[num_replicas];
-        ReplicaExchangeParameters replExParams;
+        int i;
 
         #pragma omp parallel for default(none) private(i) shared(num_replicas, inputFileString, sim_re, replExParams, sim_exchangers)
             for (i = 0; i < num_replicas; i++) {
@@ -162,6 +172,7 @@ int main(int argc, char *argv[])
                 sim_re[i]->RunSimulation(&replExParams, sim_exchangers);
             }
     }
+#endif
     // GJS
   }
   return 0;
@@ -191,7 +202,7 @@ bool CheckAndPrintEnsemble()
   std::cout << "GIBBS";
 #elif ENSEMBLE == GCMC
   std::cout << "GRAND CANONICAL";
-#elif ENSEMBLE == NPT
+#elif ENSEMBLpressuresNPT
   std::cout << "ISOBARIC-ISOTHERMAL";
 #else
   std::cerr << "CRITICAL ERROR! Preprocessor value ENSEMBLE is "
