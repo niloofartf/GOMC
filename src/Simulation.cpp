@@ -68,11 +68,18 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
 // GJS
   usingRE = set.config.sys.usingRE;
   replica_temps = set.config.sys.T.replica_temps;
-
-  #pragma omp single
+#pragma omp barrier
+  #pragma omp single 
   {
-    replExParams->replica_temps = set.config.sys.T.replica_temps;
+        replExParams->replica_temps = replica_temps;
+        #if ENSEMBLE == NPT
+        replExParams->replica_pressures = set.config.sys.gemc.replica_pressures;
+        replExParams->bNPT = 1;
+        #endif
+                
   }
+  #pragma omp barrier
+ 
 // GJS
   totalSteps = set.config.sys.step.total;
   staticValues = new StaticVals(set);
@@ -269,6 +276,9 @@ void Simulation::GetTemp(System* system, Simulation* sim){
     system->com                 =   sim->system->com;
     system->coordinates         =   sim->system->coordinates;
     system->cellList            =   sim->system->cellList;
+#if ENSEMBLE == NPT
+    sim->system->boxDimensions  =   system_set->boxDimensions;
+#endif
 //    *(system->calcEwald)        =   *(sim->system->calcEwald);
 
 }
@@ -279,6 +289,10 @@ void Simulation::SetTemp(System* system_set, Simulation* sim){
     sim->system->com            =   system_set->com;
     sim->system->coordinates    =   system_set->coordinates;
     sim->system->cellList       =   system_set->cellList;
+#if ENSEMBLE == NPT
+    sim->system->boxDimensions  =   system_set->boxDimensions;
+#endif
+
 //    *(sim->system->calcEwald)      =   *(system_set->calcEwald);
 
 }

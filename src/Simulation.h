@@ -23,6 +23,11 @@ public:
   bool usingRE;
   std::string replica_log;
   std::vector<float> replica_temps;
+  std::vector<double> replica_pressures;
+#if ENSEMBLE == NVT
+  double volume;
+#endif
+
 // GJS
   explicit Simulation(char const*const configFileName);
   explicit Simulation(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams);
