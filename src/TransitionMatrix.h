@@ -87,7 +87,7 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	boxVolume = currentAxes.GetBoxVolume(mv::BOX0);
 	temperature = forcefield.T_in_K;
 
-	INITIAL_WEIGHTINGFUNCTION_VALUE = 1.0;
+	INITIAL_WEIGHTINGFUNCTION_VALUE = 0.0;
 	int totMolec = molLookRef.NumKindInBox(molKind, mv::BOX0) + molLookRef.NumKindInBox(molKind, mv::BOX1);
 
 	if (tmmc.Nmax != UINT_MAX && nmax < totMolec) {
@@ -196,7 +196,7 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 	  if(TMfile.is_open()){
 		  TMfile << "Step count: " << step + 1 << endl;
 		  for (int i = nmin; i < nmax; i++) {
-			  TMfile << weightingFunction[i] - INITIAL_WEIGHTINGFUNCTION_VALUE << ",";
+			  TMfile << weightingFunction[i] << ",";
 		  }
 		  TMfile << endl;
 	  }
@@ -212,9 +212,9 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 
 	std::cout << "\nTM Particle Number Probability Distribution:\n";
 	for (int i = nmin; i < nmax; i++) {
-		std::cout << weightingFunction[i] - INITIAL_WEIGHTINGFUNCTION_VALUE << ",";
+		std::cout << weightingFunction[i] << ",";
 	}
-	std::cout << weightingFunction[nmax] - INITIAL_WEIGHTINGFUNCTION_VALUE << endl;
+	std::cout << weightingFunction[nmax] << endl;
 
 	//ofstream TMfile;
 	//TMfile.open("TMFile.dat");		//TODO: make this an actual name
@@ -222,14 +222,15 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 		//TMfile << setw(16) << left << "Temperature" << setw(16) << left << temperature << endl;
 		//TMfile << setw(16) << left << "Box Volume" << setw(16) << left << boxVolume << endl;
 		for (int i = nmin; i <= nmax; i++) {
-			TMfile << weightingFunction[i] - INITIAL_WEIGHTINGFUNCTION_VALUE << endl;
+			TMfile << weightingFunction[i] << endl;
 		}
 	}
 	double sumProbabilities = 0;
 	for (int i = 0; i < transitionMatrix.size(); i++) {
 		sumProbabilities += transitionMatrix[i];
 	}
-	cout << "\nSum Probabilities: DEBUG: " << sumProbabilities << endl;
+	cout << "\nSum Probabilities: " << sumProbabilities << endl;
+	cout << "Collection Matrix" << endl;
 	for (int i = 0; i < transitionMatrix.size(); i++) {
 		cout << i << ", " << transitionMatrix[i];
 		if (i % 3 == 0) {
