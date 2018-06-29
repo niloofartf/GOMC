@@ -230,6 +230,12 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 		sumProbabilities += transitionMatrix[i];
 	}
 	cout << "\nSum Probabilities: DEBUG: " << sumProbabilities << endl;
+	for (int i = 0; i < transitionMatrix.size(); i++) {
+		cout << i << ", " << transitionMatrix[i];
+		if (i % 3 == 0) {
+			cout << endl;
+		}
+	}
 	TMfile.close();
 }
 
