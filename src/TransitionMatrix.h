@@ -200,6 +200,11 @@ inline void TransitionMatrix::UpdateWeightingFunction(ulong step)
 		  }
 		  TMfile << endl;
 	  }
+	  cout << "\nWF Step count: " << step + 1 << endl;
+	  for (int i = nmin; i < nmax; i++) {
+		  cout << weightingFunction[i] << ",";
+	  }
+	  cout << endl;
   }
 }
 
