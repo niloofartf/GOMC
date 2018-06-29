@@ -225,7 +225,11 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 			TMfile << weightingFunction[i] - INITIAL_WEIGHTINGFUNCTION_VALUE << endl;
 		}
 	}
-	
+	double sumProbabilities = 0;
+	for (int i = 0; i < transitionMatrix.size(); i++) {
+		sumProbabilities += transitionMatrix[i];
+	}
+	cout << "\nSum Probabilities: DEBUG: " << sumProbabilities << endl;
 	TMfile.close();
 }
 
