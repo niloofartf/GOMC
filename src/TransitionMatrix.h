@@ -91,12 +91,12 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	int totMolec = molLookRef.NumKindInBox(molKind, mv::BOX0) + molLookRef.NumKindInBox(molKind, mv::BOX1);
 
 	if (tmmc.nmax < totMolec) {
-		nmax = tmmc.Nmax;	//TODO: Print warnings when these changes are made if necessary
+		nmax = tmmc.nmax;	//TODO: Print warnings when these changes are made if necessary
 	}
 	else {
 		nmax = totMolec;
 	}
-	nmin = tmmc.Nmin;
+	nmin = tmmc.nmin;
 	if (nmin < 0) {
 		nmin = 0;
 	}
