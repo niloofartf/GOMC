@@ -90,7 +90,7 @@ inline void TransitionMatrix::Init(config_setup::TMMC const& tmmc) {
 	INITIAL_WEIGHTINGFUNCTION_VALUE = 0.0;
 	int totMolec = molLookRef.NumKindInBox(molKind, mv::BOX0) + molLookRef.NumKindInBox(molKind, mv::BOX1);
 
-	if (tmmc.Nmax != UINT_MAX && nmax < totMolec) {
+	if (tmmc.nmax < totMolec) {
 		nmax = tmmc.Nmax;	//TODO: Print warnings when these changes are made if necessary
 	}
 	else {
@@ -235,11 +235,12 @@ inline void TransitionMatrix::PrintTMProbabilityDistribution()
 		sumProbabilities += transitionMatrix[i];
 	}
 	cout << "\nSum Probabilities: " << sumProbabilities << endl;
-	cout << "Collection Matrix" << endl;
+	cout << "Collection Matrix" << endl << "0: ";
 	for (int i = 0; i < transitionMatrix.size(); i++) {
-		cout << i << ", " << transitionMatrix[i];
-		if (i % 3 == 0) {
+		cout  << transitionMatrix[i] << ", ";
+		if ((i+1) % 3 == 0) {
 			cout << endl;
+			cout << (i + 1) / 3 << ": ";
 		}
 	}
 	TMfile.close();
