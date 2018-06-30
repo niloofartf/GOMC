@@ -94,8 +94,8 @@ ConfigSetup::ConfigSetup(void)
   out.state.files.hist.stepsPerHistSample = UINT_MAX;
   out.state.files.tmmc.enable = false;
   out.state.files.tmmc.step = ULONG_MAX;
-  out.state.files.tmmc.Nmax = UINT_MAX;
-  out.state.files.tmmc.Nmin = 0;
+  out.state.files.tmmc.nmax = UINT_MAX;
+  out.state.files.tmmc.nmin = 0;
   out.state.files.tmmc.outName = "";
 #endif
   out.statistics.settings.uniqueStr.val = "";
@@ -562,13 +562,13 @@ void ConfigSetup::Init(const char *fileName)
       printf("%-40s %-4lu \n", "Info: TMMC bias step",
              out.state.files.tmmc.step);
 	} else if (line[0] == "Nmin") {
-		out.state.files.tmmc.Nmin = stringtoi(line[1]);
+		out.state.files.tmmc.nmin = stringtoi(line[1]);
 		printf("%-40s %-4i \n", "Info: TMMC minimum simulation molecules",
-			out.state.files.tmmc.Nmin);
+			out.state.files.tmmc.nmin);
 	} else if (line[0] == "Nmax") {
-		out.state.files.tmmc.Nmax = stringtoi(line[1]);
+		out.state.files.tmmc.nmax = stringtoi(line[1]);
 		printf("%-40s %-4i \n", "Info: TMMC maximum simulation molecules",
-			out.state.files.tmmc.Nmax);
+			out.state.files.tmmc.nmax);
 	}
 #endif
     else if(line[0] == "OutEnergy") {

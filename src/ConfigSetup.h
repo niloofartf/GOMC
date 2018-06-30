@@ -244,8 +244,8 @@ struct EventSettings { /* : ReadableStepDependentBase*/
 struct TMMC {
   bool enable;
   ulong step;
-  int Nmin;
-  int Nmax;
+  int nmin;
+  int nmax;
   std::string outName;
 };
 
