@@ -186,7 +186,7 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams, Simulati
     system->moveSettings.AdjustMoves(step);
     system->ChooseAndRunMove(step);
     cpu->Output(step);
-
+printf("Step : %lu\n", step);
     if((step + 1) == cpu->equilSteps) {
       double currEnergy = system->potential.totalEnergy.total;
       if(abs(currEnergy - startEnergy) > 1.0e+10) {
@@ -198,14 +198,23 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams, Simulati
     }
 
   
-    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0) && step > cpu->equilSteps);
+    bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0) && step >= cpu->equilSteps);
 
     if (bDoReplEx) {
-    #pragma omp barrier          
-            printf("GJS Step : %lu, repl : %d, b4 exch : system->epot = %f\n", step, repl_ex->repl, system->potential.totalEnergy.total);
+
+
+#if ENSEMBLE == NPT
             bExchanged = replica_exchange(fplog, repl_ex,
-                                           state_local, system->potential.totalEnergy.total,
+                                           state_global, system->potential.totalEnergy.total,
+                                           system->boxDimensions->GetTotVolume(),
                                            step, replExParams);
+#endif 
+#if ENSEMBLE == NVT
+            bExchanged = replica_exchange(fplog, repl_ex,
+                                           state_global, system->potential.totalEnergy.total,
+                                           volume,
+                                           step, replExParams);
+#endif 
    
             if (bExchanged != repl_ex->repl){
                 SetTemp(system, sim_exchangers[bExchanged]);        
@@ -277,7 +286,7 @@ void Simulation::GetTemp(System* system, Simulation* sim){
     system->coordinates         =   sim->system->coordinates;
     system->cellList            =   sim->system->cellList;
 #if ENSEMBLE == NPT
-    sim->system->boxDimensions  =   system_set->boxDimensions;
+    system->boxDimensions       =   sim->system->boxDimensions;
 #endif
 //    *(system->calcEwald)        =   *(sim->system->calcEwald);
 
@@ -288,9 +297,9 @@ void Simulation::SetTemp(System* system_set, Simulation* sim){
     sim->system->potential      =   system_set->potential;
     sim->system->com            =   system_set->com;
     sim->system->coordinates    =   system_set->coordinates;
-    sim->system->cellList       =   system_set->cellList;
+   // sim->system->cellList       =   system_set->cellList;
 #if ENSEMBLE == NPT
-    sim->system->boxDimensions  =   system_set->boxDimensions;
+//    sim->system->boxDimensions  =   system_set->boxDimensions;
 #endif
 
 //    *(sim->system->calcEwald)      =   *(system_set->calcEwald);

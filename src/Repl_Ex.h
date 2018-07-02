@@ -49,6 +49,8 @@ struct t_inputrec;
 class Replica_State;
 class PRNG;
 
+
+// GJS change this to take num_replicas as a parameter so I can initialize the vectors
 /* The parameters for the replica exchange algorithm */
 struct ReplicaExchangeParameters
 {

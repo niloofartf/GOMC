@@ -122,7 +122,7 @@ typedef struct gmx_repl_ex
     float  *prob;
     float  *Epot;
     float  *beta;
-    float  *Vol;
+    double  *Vol;
     float **de;
 
 } t_gmx_repl_ex;
@@ -208,10 +208,19 @@ init_replica_exchange(FILE                            *fplog,
     re->bNPT     = 1;
 #endif
 
-    re->repl     = omp_get_thread_num();
-    re->nrepl    = omp_get_num_threads();
+    printf("set bNPT : %d\n", re->bNPT);
+    cout.flush();
+// GJS Note change this to a one liner when you have wifi to google
+    for (int i=0; i < replExParams->replica_temps.size(); i++){
+        if ( temp == replExParams->replica_temps[i] )
+            re->repl = i;
+    }
+//    re->repl     = omp_get_thread_num();
+    re->nrepl    = replExParams->replica_temps.size();
     re->q = (float**)malloc(sizeof(float*)*ereENDSINGLE);
     fprintf(fplog, "Repl  There are %d replicas:\n", re->nrepl);
+    printf("Repl  There are %d replicas:\n", re->nrepl);
+    cout.flush();
 
     /* We only check that the number of atoms in the systms match.
      * This, of course, do not guarantee that the systems are the same,
@@ -247,8 +256,21 @@ if (re->bNPT){
         }
         #pragma omp barrier
     }
+    printf("I set local pressures.\n");  
+    cout.flush();   
+        #pragma omp barrier
 
+    /* Make an index for increasing replica order */
+    /* only makes sense if one or the other is varying, not both!
+       if both are varying, we trust the order the person gave. */
     
+    re->ind = (int*)malloc((re->nrepl)*sizeof(int));
+    for (int i = 0; i < re->nrepl; i++)
+    {
+        re->ind[i] = i;
+    }
+
+ 
     if (re->bNPT)
     {
         fprintf(fplog, "\nRepl  p");
@@ -266,17 +288,9 @@ if (re->bNPT){
             }
         }
     }
-
-
-    /* Make an index for increasing replica order */
-    /* only makes sense if one or the other is varying, not both!
-       if both are varying, we trust the order the person gave. */
-    
-    re->ind = (int*)malloc((re->nrepl)*sizeof(int));
-    for (int i = 0; i < re->nrepl; i++)
-    {
-        re->ind[i] = i;
-    }
+    printf("I checked for pressure monotonicity.\n");  
+    cout.flush();   
+    #pragma omp barrier
 
     if (re->type < ereENDSINGLE)
     {
@@ -311,6 +325,8 @@ if (re->bNPT){
             }
         }
     }
+    printf("I checked for replica equality, should be none.\n");        
+    #pragma omp barrier
 
     /* keep track of all the swaps, starting with the initial placement. */
     re->allswaps = (int*)malloc((re->nrepl)*sizeof(int));
@@ -376,7 +392,7 @@ if (re->bNPT){
     re->prob = (float*)malloc((re->nrepl)*sizeof(float));
     re->bEx = (int*)malloc((re->nrepl)*sizeof(int));
     re->beta = (float*)malloc((re->nrepl)*sizeof(float));
-    re->Vol = (float*)malloc((re->nrepl)*sizeof(float));
+    re->Vol = (double*)malloc((re->nrepl)*sizeof(double));
     re->Epot = (float*)malloc((re->nrepl)*sizeof(float));
 
     #pragma omp barrier
@@ -385,6 +401,9 @@ if (re->bNPT){
     { 
         for ( int i = 0; i < re->nrepl; i++ ){ 
             replExParams->replica_energies.push_back(0.0);
+            #if ENSEMBLE == NPT
+            replExParams->replica_volumes.push_back(0.0);
+            #endif
         }
     }
     
@@ -409,7 +428,8 @@ if (re->bNPT){
     re->nex = replExParams->numExchanges;
     re->nst = replExParams->exchangeInterval;
     re->seed = replExParams->randomSeed;
-    
+    printf("finished initializing\n");    
+    cout.flush();
     #pragma omp barrier
     return re;
 }
@@ -629,7 +649,7 @@ static float calc_delta(FILE *fplog, int bPrint, struct gmx_repl_ex *re, int a, 
 {
     float   ediff, dpV, delta = 0;
     float  *Epot = re->Epot;
-    float  *Vol  = re->Vol;
+    double  *Vol  = re->Vol;
     float **de   = re->de;
     float  *beta = re->beta;
     
@@ -739,6 +759,8 @@ test_for_replica_exchange(FILE                          *fplog,
                           int                           step,
                           ReplicaExchangeParameters*    replExParams)
 {
+    printf("called t4_replica_exchange\n");
+    cout.flush();
     int                                  m, i, j, a, b, ap, bp, i0, i1, tmp;
     float                                 delta = 0;
     int                             bPrint, bMultiEx;
@@ -754,6 +776,7 @@ test_for_replica_exchange(FILE                          *fplog,
 
     bMultiEx = (re->nex > 1);  /* multiple exchanges at each state */
     fprintf(fplog, "Replica exchange at step %d\n", step);
+    printf("Replica exchange at step %d\n", step);
     cout.flush();
     if (re->bNPT)
     {
@@ -764,6 +787,8 @@ test_for_replica_exchange(FILE                          *fplog,
         bVol               = true;
         re->Vol[re->repl]  = vol;
     }
+    printf("Zeroed vol and set bVol true\n");
+    cout.flush();
     if ((re->type == ereTEMP || re->type == ereTL))
     {
         for (i = 0; i < re->nrepl; i++)
@@ -785,6 +810,8 @@ test_for_replica_exchange(FILE                          *fplog,
             re->beta[i] = 1.0/(re->temp*BOLTZ);  /* we have a single temperature */
         }
     }
+    printf("did some crazy stuff\n");
+    cout.flush();
     
     /* now actually do the communication */
     if (bVol)
@@ -795,15 +822,22 @@ test_for_replica_exchange(FILE                          *fplog,
             replExParams->replica_volumes[re->repl] = vol;
         }
         #pragma omp barrier
+       
         
+        printf("set me to global\n");
+        cout.flush();
+
+ 
         #pragma omp critical
-       {
+        {
             for (int i = 0; i < re->nrepl; i++) 
                 re->Vol[i] = replExParams->replica_volumes[i];        
         }
         #pragma omp barrier
     }
-    
+     
+    printf("got a global vol array\n");
+    cout.flush();
     if (bEpot)
     {
         #pragma omp barrier
@@ -822,6 +856,9 @@ test_for_replica_exchange(FILE                          *fplog,
         #pragma omp barrier
 
     }
+    printf("got a global Epot array\n");
+    cout.flush();
+    if (bEpot)
     /* make a duplicate set of indices for shuffling */
     for (i = 0; i < re->nrepl; i++)
     {
@@ -1030,6 +1067,8 @@ prepare_to_do_exchange(struct gmx_repl_ex *re,
                        int                *maxswap,
                        int           *bThisReplicaExchanged)
 {
+    printf("called p4_replica_exchange\n");
+    cout.flush();
     int i, j;
     /* Hold the cyclic decomposition of the (multiple) replica
      * exchange. */
@@ -1090,9 +1129,10 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
     /* Where each replica ends up after the exchange attempt(s). */
     /* The order in which multiple exchanges will occur. */
     int bThisReplicaExchanged = false;
-
+    printf("called replica_exchange\n");
+    cout.flush();
 //    if (MASTER(cr))
-        replica_id  = re->repl;
+    replica_id  = re->repl;
 
     // GJS figure out where vol is stored
     double vol = 0.0;

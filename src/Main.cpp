@@ -202,7 +202,7 @@ bool CheckAndPrintEnsemble()
   std::cout << "GIBBS";
 #elif ENSEMBLE == GCMC
   std::cout << "GRAND CANONICAL";
-#elif ENSEMBLpressuresNPT
+#elif ENSEMBLE == NPT
   std::cout << "ISOBARIC-ISOTHERMAL";
 #else
   std::cerr << "CRITICAL ERROR! Preprocessor value ENSEMBLE is "

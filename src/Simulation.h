@@ -25,7 +25,7 @@ public:
   std::vector<float> replica_temps;
   std::vector<double> replica_pressures;
 #if ENSEMBLE == NVT
-  double volume;
+  double volume = 0.0;
 #endif
 
 // GJS
