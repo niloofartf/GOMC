@@ -162,10 +162,15 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams, Simulati
   FILE *fplog = fopen(replica_log.c_str(), "a");  
 
   const bool useReplicaExchange = (replExParams->exchangeInterval > 0);
-  
+  //printf ("UseRE : %d\n", useReplicaExchange); 
   if (useReplicaExchange){
-    #pragma omp barrier          
-      printf(" calling init w temp of %f\n", staticValues->forcefield.T_in_K);
+    #pragma omp barrier         
+    #if ENSEMBLE == NVT 
+      printf("Initializing w temp of %f\n", staticValues->forcefield.T_in_K);
+    #endif
+    #if ENSEMBLE == NPT
+      printf("Initializing w temp of %f, pres of %f\n", staticValues->forcefield.T_in_K, staticValues->pressure);
+    #endif
       repl_ex = init_replica_exchange(fplog, staticValues->forcefield.T_in_K, replExParams);
     }
 
@@ -186,7 +191,6 @@ void Simulation::RunSimulation(ReplicaExchangeParameters* replExParams, Simulati
     system->moveSettings.AdjustMoves(step);
     system->ChooseAndRunMove(step);
     cpu->Output(step);
-printf("Step : %lu\n", step);
     if((step + 1) == cpu->equilSteps) {
       double currEnergy = system->potential.totalEnergy.total;
       if(abs(currEnergy - startEnergy) > 1.0e+10) {
@@ -199,7 +203,8 @@ printf("Step : %lu\n", step);
 
   
     bDoReplEx = (useReplicaExchange && (step > 0) && !bLastStep && (step % replExParams->exchangeInterval == 0) && step >= cpu->equilSteps);
-
+    //printf("bDoReplEx : %d\n", bDoReplEx);
+    //printf("exchInt : %d\n", replExParams->exchangeInterval);
     if (bDoReplEx) {
 
 
@@ -212,10 +217,12 @@ printf("Step : %lu\n", step);
 #if ENSEMBLE == NVT
             bExchanged = replica_exchange(fplog, repl_ex,
                                            state_global, system->potential.totalEnergy.total,
-                                           volume,
+                                           staticValues->boxDimensions->GetTotVolume(),
                                            step, replExParams);
 #endif 
    
+      //      printf("GJS bEx : %d, repl : %d", bExchanged, repl_ex->repl);
+            
             if (bExchanged != repl_ex->repl){
                 SetTemp(system, sim_exchangers[bExchanged]);        
             }
@@ -228,7 +235,7 @@ printf("Step : %lu\n", step);
             
             #pragma omp barrier          
             
-            printf("GJS Step : %lu, repl : %d, after exch : system->epot = %f\n", step, repl_ex->repl, system->potential.totalEnergy.total);
+        //    printf("GJS Step : %lu, repl : %d, after exch : system->epot = %f\n", step, repl_ex->repl, system->potential.totalEnergy.total);
         }
 #ifndef NDEBUG
     if((step + 1) % 1000 == 0)
@@ -297,9 +304,9 @@ void Simulation::SetTemp(System* system_set, Simulation* sim){
     sim->system->potential      =   system_set->potential;
     sim->system->com            =   system_set->com;
     sim->system->coordinates    =   system_set->coordinates;
-   // sim->system->cellList       =   system_set->cellList;
+    sim->system->cellList       =   system_set->cellList;
 #if ENSEMBLE == NPT
-//    sim->system->boxDimensions  =   system_set->boxDimensions;
+    sim->system->boxDimensions  =   system_set->boxDimensions;
 #endif
 
 //    *(sim->system->calcEwald)      =   *(system_set->calcEwald);

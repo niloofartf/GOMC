@@ -43,3 +43,6 @@ Intel 2016 - MPI
 
 Load Module(Intel XXXX ; MPI ) 
 Job Script on Website to run simulation
+
+StaticVals holds pressure
+MoleculeKinds holds ChemicalPot

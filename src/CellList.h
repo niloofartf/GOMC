@@ -13,6 +13,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include <omp.h>
 
 class Molecules;
 class XYZArray;

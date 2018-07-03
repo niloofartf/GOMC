@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 #endif
 
 #if ENSEMBLE == NPT || ENSEMBLE == NVT
-    int num_replicas = sim.replica_temps.size();
+    int numReplicas = sim.replica_temps.size();
 #endif
 
 #if ENSEMBLE == NPT
@@ -141,32 +141,37 @@ int main(int argc, char *argv[])
         // Set each with a temp value
         // Build directory structure
         // Call RunSim multithreaded
+
+#if ENSEMBLE == NVT
         // PrintSimulationFooter();
-        std::cout << "I recognize you want to use NVT-RE since usingRE is true.\n " << std::endl; 
+        std::cout << "I recognize you want to use NVT-RE.\n " << std::endl; 
+#endif
+#if ENSEMBLE == NPT
+        std::cout << "I recognize you want to use NPT-RE.\n " << std::endl; 
+#endif
+        std::cout << "num replicas : " << numReplicas << "\n " << std::endl; 
         
-        std::cout << "num replicas : " << num_replicas << "\n " << std::endl; 
-        
-        Simulation* sim_re[num_replicas];
-        Simulation* sim_exchangers[num_replicas];
+        Simulation* sim_re[numReplicas];
+        Simulation* sim_exchangers[numReplicas];
         ReplicaExchangeParameters replExParams;
 
-        for (int i = 0 ; i < num_replicas; i++) {
+        for (int i = 0 ; i < numReplicas; i++) {
             sim_exchangers[i] = new Simulation(inputFileString.c_str(), i, &replExParams);
         }
 
-        if (num_replicas > numThreads){
-          std::cout << "Error: Not enough threads!\n";
+        if (numReplicas != numThreads){
+          std::cout << "Error: Invalid number of threads/replicas!\n";
           std::cout << "Use  a 1:1 ratio of replicas:threads.\n";
           exit(EXIT_FAILURE);
         }
-                  
-        exit(0);
  
         int counter;
         int i;
 
-        #pragma omp parallel for default(none) private(i) shared(num_replicas, inputFileString, sim_re, replExParams, sim_exchangers)
-            for (i = 0; i < num_replicas; i++) {
+        #pragma omp parallel for default(none) private(i) shared(numReplicas, inputFileString, sim_re, replExParams, sim_exchangers)
+            for (i = 0; i < numReplicas; i++) {
+             // overloaded Constructor with dynamic initialization for RE
+             // uses the i-value to index into the temperature array, (and Pres array if NPT)
                 sim_re[i] = new Simulation(inputFileString.c_str(), i, &replExParams);
              // overloaded RunSim for RE
                 sim_re[i]->RunSimulation(&replExParams, sim_exchangers);

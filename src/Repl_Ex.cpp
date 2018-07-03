@@ -256,7 +256,7 @@ if (re->bNPT){
         }
         #pragma omp barrier
     }
-    printf("I set local pressures.\n");  
+//    printf("I set local pressures.\n");  
     cout.flush();   
         #pragma omp barrier
 
@@ -288,7 +288,7 @@ if (re->bNPT){
             }
         }
     }
-    printf("I checked for pressure monotonicity.\n");  
+//    printf("I checked for pressure monotonicity.\n");  
     cout.flush();   
     #pragma omp barrier
 
@@ -325,7 +325,7 @@ if (re->bNPT){
             }
         }
     }
-    printf("I checked for replica equality, should be none.\n");        
+//    printf("I checked for replica equality, should be none.\n");        
     #pragma omp barrier
 
     /* keep track of all the swaps, starting with the initial placement. */
@@ -759,7 +759,7 @@ test_for_replica_exchange(FILE                          *fplog,
                           int                           step,
                           ReplicaExchangeParameters*    replExParams)
 {
-    printf("called t4_replica_exchange\n");
+    //printf("called t4_replica_exchange\n");
     cout.flush();
     int                                  m, i, j, a, b, ap, bp, i0, i1, tmp;
     float                                 delta = 0;
@@ -776,7 +776,7 @@ test_for_replica_exchange(FILE                          *fplog,
 
     bMultiEx = (re->nex > 1);  /* multiple exchanges at each state */
     fprintf(fplog, "Replica exchange at step %d\n", step);
-    printf("Replica exchange at step %d\n", step);
+    //printf("Replica exchange at step %d\n", step);
     cout.flush();
     if (re->bNPT)
     {
@@ -787,7 +787,7 @@ test_for_replica_exchange(FILE                          *fplog,
         bVol               = true;
         re->Vol[re->repl]  = vol;
     }
-    printf("Zeroed vol and set bVol true\n");
+    //printf("Zeroed vol and set bVol true\n");
     cout.flush();
     if ((re->type == ereTEMP || re->type == ereTL))
     {
@@ -810,7 +810,7 @@ test_for_replica_exchange(FILE                          *fplog,
             re->beta[i] = 1.0/(re->temp*BOLTZ);  /* we have a single temperature */
         }
     }
-    printf("did some crazy stuff\n");
+    //printf("did some crazy stuff\n");
     cout.flush();
     
     /* now actually do the communication */
@@ -824,7 +824,7 @@ test_for_replica_exchange(FILE                          *fplog,
         #pragma omp barrier
        
         
-        printf("set me to global\n");
+        //printf("set me to global\n");
         cout.flush();
 
  
@@ -836,7 +836,7 @@ test_for_replica_exchange(FILE                          *fplog,
         #pragma omp barrier
     }
      
-    printf("got a global vol array\n");
+    //printf("got a global vol array\n");
     cout.flush();
     if (bEpot)
     {
@@ -856,7 +856,7 @@ test_for_replica_exchange(FILE                          *fplog,
         #pragma omp barrier
 
     }
-    printf("got a global Epot array\n");
+    //printf("got a global Epot array\n");
     cout.flush();
     if (bEpot)
     /* make a duplicate set of indices for shuffling */
@@ -1067,7 +1067,7 @@ prepare_to_do_exchange(struct gmx_repl_ex *re,
                        int                *maxswap,
                        int           *bThisReplicaExchanged)
 {
-    printf("called p4_replica_exchange\n");
+    //printf("called p4_replica_exchange\n");
     cout.flush();
     int i, j;
     /* Hold the cyclic decomposition of the (multiple) replica
@@ -1129,7 +1129,7 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
     /* Where each replica ends up after the exchange attempt(s). */
     /* The order in which multiple exchanges will occur. */
     int bThisReplicaExchanged = false;
-    printf("called replica_exchange\n");
+    //printf("called replica_exchange\n");
     cout.flush();
 //    if (MASTER(cr))
     replica_id  = re->repl;

@@ -13,6 +13,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 
 #include <algorithm>
 
+#define END_CELL -1
 CellList::CellList(const Molecules& mols,  BoxDimensions& dims)
   : mols(&mols)
 {
@@ -175,3 +176,4 @@ CellList::Pairs CellList::EnumeratePairs(int box) const
 {
   return CellList::Pairs(*this, box);
 }
+  
