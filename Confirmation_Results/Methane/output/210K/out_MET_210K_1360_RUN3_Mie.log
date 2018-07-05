@@ -1,0 +1,164 @@
+Info: GOMC Version 2.31
+Info: Start Time: Mon Jul  2 17:34:25 2018
+Info: Host Name: n0541.ten.osc.edu
+CPU information:
+Info: Total number of CPUs: 12
+Info: Total number of CPUs available: 12
+Info: Model name: Intel(R) Xeon(R) CPU           X5650  @ 2.67GHz
+Info: System name: Linux
+Info: Release: 2.6.32-696.30.1.el6.x86_64
+Info: Version: #1 SMP Fri May 18 11:50:44 EDT 2018
+Info: Kernel Architecture: x86_64
+Info: Total Ram: 48385.4MB
+Info: Used Ram: 13868.0MB
+Info: Working in the current directory: /users/PMIU0124/miu0132/TMMC/GOMC_Files/methane
+Info: GOMC COMPILED TO RUN GRAND CANONICAL ENSEMBLE.
+Info: Number of threads                  1 
+
+Reading Input File:                      input/210K/in_210K_1360_Mie.conf
+Info: Random seed                        Active 
+Info: PARAMETER file: EXOTIC format!
+Info: Input Temperature                  210.0000 K
+Info: Non-truncated potential            Active 
+Info: Long Range Correction              Active 
+Info: Cutoff                             12.0000 A
+Info: Exclude                            ONE-FOUR 
+Warning: Modified 1-4 VDW parameters will be ignored!
+Info: Pressure calculation               Inactive 
+Info: Total number of steps              200000000 
+Info: Number of equilibration steps      500000 
+Info: Move adjustment frequency          1000 
+Info: Displacement move frequency        0.2000 
+Info: Rotation move frequency            0.2000 
+Info: Molecule swap move frequency       0.6000 
+Info: CBMC First atom trials             10   
+Info: CBMC Secondary atom trials         4    
+Info: CBMC Angle trials                  100  
+Info: CBMC Dihedral trials               30   
+Info: Chemical potential                 MET    -1360.0000 K
+Info: Output name                        ETH_280_00_K_u_1000_r1a 
+Info: Coordinate frequency               100000 
+Info: Restart frequency                  1000000 
+Info: Console output frequency           100000 
+Info: Average output frequency           100000 
+Info: Histogram output frequency         100000 
+Info: TMMC                               Active 
+Info: TMMC bias step                     100000 
+Info: TMMC maximum simulation molecules  300  
+Info: Histogram sample frequency         200 
+Default: Intra-Swap move frequency       0.0000 
+Default: Regrowth move frequency         0.0000 
+Default: Short Range Cutoff              0.0000 
+Warning: 1-4 Electrostatic scaling set, but will be ignored.
+Finished Reading Input File:             input/210K/in_210K_1360_Mie.conf
+
+Reading from EXOTIC-Style parameter file:  	resources/Par_Mie_Alkanes_Exotic.inp
+Reading BONDS parameters.
+Reading ANGLES parameters.
+Reading DIHEDRALS parameters.
+Reading NONBONDED_MIE parameters.
+Finished reading EXOTIC-Style parameter file:  	resources/Par_Mie_Alkanes_Exotic.inp
+Reading from box 0 PDB coordinate file:  	STEP3_START_MET_sys_sim.pdb
+Finished reading box 0 PDB coordinate file:  	STEP3_START_MET_sys_sim.pdb
+Reading from box 1 PDB coordinate file:  	STEP3_START_MET_sys_reservoir.pdb
+Finished reading box 1 PDB coordinate file:  	STEP3_START_MET_sys_reservoir.pdb
+Random number seed: 2930170933
+
+Molecules in PSF:
+Molecule Kind: MET
+Idx	name	type	charge	mass
+0	C1	CH4	0.0000	16.0430
+
+Bonds:
+
+Angles:
+
+Dihedrals:
+
+Bonds parameter:
+Atom Types                    Kb(K)                b0(A) 
+Angles parameter:
+Atom Types                Ktheta(K)       theta0(degree) 
+Dihedrals parameter:
+Atom Types                  Kchi(K)    n   delta(degree) 
+
+NonBonded 1-4 parameters:
+Type1  Type2             Epsilon(K)    Sigma(A)       N 
+CH4    CH4                 161.0000      3.7400   14.00 
+
+NonBonded parameters:
+Type1  Type2             Epsilon(K)    Sigma(A)       N 
+CH4    CH4                 161.0000      3.7400   14.00 
+
+Info: Box  0:  Periodic Cell Basis 1     30.000   0.000   0.000 
+Info: Box  0:  Periodic Cell Basis 2      0.000  30.000   0.000 
+Info: Box  0:  Periodic Cell Basis 3      0.000   0.000  30.000 
+
+Info: Box  1:  Periodic Cell Basis 1     60.000   0.000   0.000 
+Info: Box  1:  Periodic Cell Basis 2      0.000  60.000   0.000 
+Info: Box  1:  Periodic Cell Basis 3      0.000   0.000  60.000 
+
+Minimum coordinates in box 0: x =    5.000, y =    5.000, z =   -0.000
+Maximum coordinates in box 0: x =    5.000, y =    5.000, z =   -0.000
+Wrapping molecules inside the simulation box 0:
+Minimum coordinates in box 1: x =    0.086, y =    0.090, z =    0.098
+Maximum coordinates in box 1: x =   60.309, y =   60.306, z =   60.307
+Wrapping molecules inside the simulation box 1:
+
+################################################################################
+########################## INITIAL SIMULATION ENERGY ###########################
+
+ETITLE:     STEP           TOTAL        INTRA(B)       INTRA(NB)       INTER(LJ)             LRC     TOTAL_ELECT            REAL           RECIP            SELF            CORR
+
+ENER_0:        0         -0.0653          0.0000          0.0000          0.0000         -0.0653          0.0000          0.0000          0.0000          0.0000         -0.0000
+
+ENER_1:        0          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000         -0.0000
+
+STITLE:     STEP        TOTALMOL
+
+STAT_0:        0               1
+
+STAT_1:        0            4000
+
+################################################################################
+############################# STARTING SIMULATION ##############################
+
+MTITLE:     STEP          DISTRY       DISACCEPT      DISACCEPT%          DISMAX          ROTATE       ROTACCEPT      ROTACCEPT%          ROTMAX       INTRASWAP       INTACCEPT      INTACCEPT%        REGROWTH    REGROWACCEPT   REGROWACCEPT%        TRANSFER      TRANACCEPT     TRANACCEPT%
+
+ETITLE:     STEP           TOTAL        INTRA(B)       INTRA(NB)       INTER(LJ)             LRC     TOTAL_ELECT            REAL           RECIP            SELF            CORR
+
+STITLE:     STEP        TOTALMOL
+
+Printed combined psf to file ETH_280_00_K_u_1000_r1a_merged.psf
+MOVE_0:   100000           40008           19822         49.5451          2.0402               0               0          0.0000          0.7854               0               0          0.0000               0               0          0.0000           30055           22440         74.6631
+
+ENER_0:   100000     -14766.8028          0.0000          0.0000     -14294.6805       -472.1223          0.0000          0.0000          0.0000          0.0000          0.0000
+
+STAT_0:   100000              85
+
+MOVE_1:   100000           29937           22524         75.2380
+
+ENER_1:   100000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000
+
+STAT_1:   100000            3916
+
+
+WF Step count: 100000
+0.0000,0.0000,0.0000,3.7312,3.7312,3.7312,3.7312,6.2560,8.2103,8.2103,8.2103,10.6382,12.0479,12.7338,13.3801,12.9611,14.9257,15.2316,15.2316,15.2316,16.6675,19.1714,19.1714,19.1714,19.1714,19.1714,20.8110,21.4626,22.0890,22.2168,22.8293,23.0514,23.4323,23.3674,23.3674,23.3674,23.3674,26.6877,27.0374,26.6763,26.6763,26.6763,27.3353,28.9672,29.3985,29.3985,29.3985,31.6613,32.4110,32.5546,32.9298,33.4566,33.7012,33.8282,33.2609,33.1238,33.5721,33.7876,33.8931,33.9462,34.6819,35.0656,35.7188,36.0831,36.0496,35.7958,36.0357,36.3599,36.6834,36.9195,37.2898,37.3771,37.3603,37.4009,37.5153,37.7520,37.9238,38.0504,38.0367,38.0367,38.1539,38.1912,38.2648,38.3311,38.4547,38.4297,38.5340,38.6284,38.6627,38.6758,38.6837,38.6849,38.7456,38.8226,38.9454,39.0862,39.1517,39.1530,39.0595,39.0607,39.0782,39.1185,39.0544,39.0826,39.0952,39.0832,39.0924,39.1102,39.1827,39.2066,39.2512,39.2024,39.1824,39.1433,39.2800,39.3942,39.4780,39.4138,39.3478,39.3764,39.3081,39.2774,39.2374,39.2726,39.2648,39.2735,39.2086,39.1111,39.0043,38.9367,38.9099,38.8590,38.8035,38.7888,38.6751,38.6215,38.5123,38.4242,38.3248,38.3248,38.3438,38.4783,38.4398,38.3625,38.1876,38.0961,38.0339,37.6767,37.7403,37.7293,37.7689,37.7821,37.7799,37.8575,37.7062,37.7294,37.5249,37.6073,37.6785,37.4439,37.1773,37.3559,37.3938,37.2572,36.8666,36.7120,36.7098,36.3342,36.3563,35.9691,35.4700,35.6441,35.8501,35.9786,35.5291,35.5004,35.3970,35.5007,35.6630,35.5854,35.2938,35.3355,35.4187,35.3148,35.2891,34.6492,34.7884,34.4160,34.0951,33.7793,33.9453,33.6420,33.5924,33.7441,32.9377,32.6460,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,31.1999,
+Steps/sec. : 20777.2825
+MOVE_0:   200000           80026           41857         52.3043         15.0000               0               0          0.0000          0.7854               0               0          0.0000               0               0          0.0000           60160           43157         71.7370
+
+ENER_0:   200000      -2261.9648          0.0000          0.0000      -2177.2768        -84.6880          0.0000          0.0000          0.0000          0.0000          0.0000
+
+STAT_0:   200000              36
+
+MOVE_1:   200000           59814           43192         72.2105
+
+ENER_1:   200000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000          0.0000
+
+STAT_1:   200000            3965
+
+
+WF Step count: 200000
+0.0000,0.0000,0.0000,3.7312,3.7312,3.7312,3.7312,6.2560,8.2103,8.2103,8.2103,10.6382,12.0479,12.7338,13.3801,12.9611,15.0311,16.4921,17.9411,18.8752,19.6653,20.8997,22.2168,22.9634,23.7280,24.5737,25.3030,26.0353,26.7857,27.4760,28.0944,28.6141,29.1838,29.7397,30.3055,30.7902,31.2934,31.7784,32.3125,32.6585,33.0827,33.4597,33.9065,34.3093,34.7096,35.0664,35.4429,35.7423,36.0256,36.0461,36.3291,36.8107,37.1237,37.1955,37.4008,37.7724,38.0032,38.1406,38.2789,38.4264,38.4952,38.6865,38.9944,39.1795,39.3037,39.3568,39.4627,39.8387,40.0102,40.3132,40.6098,40.7039,40.8532,41.0263,41.1544,41.2515,41.3500,41.4647,41.5339,41.5097,41.5880,41.5832,41.6791,41.7588,41.8329,41.8565,41.9143,42.0009,42.0409,42.0470,42.0763,42.0802,42.1439,42.2011,42.2942,42.4020,42.4696,42.4800,42.4008,42.4080,42.4536,42.5262,42.4557,42.5006,42.5564,42.5563,42.5555,42.5068,42.5575,42.5726,42.5668,42.5345,42.5155,42.5076,42.6390,42.7421,42.8033,42.7383,42.6523,42.6757,42.5960,42.5617,42.5249,42.5458,42.5459,42.5763,42.5095,42.4189,42.3307,42.2473,42.2127,42.1704,42.1346,42.1036,41.9700,41.8933,41.7927,41.7250,41.6399,41.6426,41.6328,41.7573,41.7057,41.6247,41.4643,41.3557,41.2936,40.9364,40.9999,40.9890,41.0286,41.0417,41.0396,41.1171,40.9659,40.9890,40.7846,40.8670,40.9381,40.7035,40.4370,40.6156,40.6535,40.5168,40.1263,39.9717,39.9695,39.5939,39.6160,39.2287,38.7297,38.9038,39.1097,39.2383,38.7888,38.7601,38.6567,38.7604,38.9226,38.8451,38.5534,38.5952,38.6784,38.5745,38.5488,37.9089,38.0481,37.6756,37.3548,37.0390,37.2050,36.9016,36.8521,37.0038,36.1974,35.9057,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,34.4596,
+Steps/sec. : 42643.1553

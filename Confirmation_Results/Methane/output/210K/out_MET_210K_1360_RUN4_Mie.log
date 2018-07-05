@@ -1,0 +1,54 @@
+Info: GOMC Version 2.31
+Info: Start Time: Mon Jul  2 17:32:23 2018
+Info: Host Name: n0541.ten.osc.edu
+CPU information:
+Info: Total number of CPUs: 12
+Info: Total number of CPUs available: 12
+Info: Model name: Intel(R) Xeon(R) CPU           X5650  @ 2.67GHz
+Info: System name: Linux
+Info: Release: 2.6.32-696.30.1.el6.x86_64
+Info: Version: #1 SMP Fri May 18 11:50:44 EDT 2018
+Info: Kernel Architecture: x86_64
+Info: Total Ram: 48385.4MB
+Info: Used Ram: 15273.0MB
+Info: Working in the current directory: /users/PMIU0124/miu0132/TMMC/GOMC_Files/methane
+Info: GOMC COMPILED TO RUN GRAND CANONICAL ENSEMBLE.
+Info: Number of threads                  1 
+
+Reading Input File:                      input/210K/in_210K_1360_Mie.conf
+Info: Random seed                        Active 
+Info: PARAMETER file: EXOTIC format!
+Info: Input Temperature                  210.0000 K
+Info: Non-truncated potential            Active 
+Info: Long Range Correction              Active 
+Info: Cutoff                             12.0000 A
+Info: Exclude                            ONE-FOUR 
+Warning: Modified 1-4 VDW parameters will be ignored!
+Info: Pressure calculation               Inactive 
+Info: Total number of steps              200000000 
+Info: Number of equilibration steps      500000 
+Info: Move adjustment frequency          1000 
+Info: Displacement move frequency        0.2000 
+Info: Rotation move frequency            0.2000 
+Info: Molecule swap move frequency       0.6000 
+Info: CBMC First atom trials             10   
+Info: CBMC Secondary atom trials         4    
+Info: CBMC Angle trials                  100  
+Info: CBMC Dihedral trials               30   
+Info: Chemical potential                 MET    -1360.0000 K
+Info: Output name                        ETH_280_00_K_u_1000_r1a 
+Info: Coordinate frequency               100000 
+Info: Restart frequency                  1000000 
+Info: Console output frequency           100000 
+Info: Average output frequency           100000 
+Info: Histogram output frequency         100000 
+Info: TMMC                               Active 
+Info: TMMC bias step                     100000 
+Info: TMMC maximum simulation molecules  300  
+Info: Histogram sample frequency         200 
+Default: Intra-Swap move frequency       0.0000 
+Default: Regrowth move frequency         0.0000 
+Default: Short Range Cutoff              0.0000 
+Warning: 1-4 Electrostatic scaling set, but will be ignored.
+Finished Reading Input File:             input/210K/in_210K_1360_Mie.conf
+
