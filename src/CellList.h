@@ -142,8 +142,10 @@ public:
   }
 
 private:
+// GJS
   int at;
   std::vector<int>::const_iterator list;
+// GJS
 };
 
 
@@ -167,10 +169,11 @@ public:
   void Next();
 
 private:
-
+// GJS
   CellList::Cell cell;
   std::vector<int>::const_iterator head;
   std::vector<int>::const_iterator neighbor, nEnd;
+// GJS
 };
 
 inline CellList::Cell CellList::EnumerateCell(int cell, int box) const
@@ -263,10 +266,14 @@ private:
   // skip to next nonempty cell
   void NextCell();
 
+// GJS
   CellList::Cell cellParticle;
   CellList::Neighbors localParticle;
+// maybe not the reference, or maybe remove the const?
   const CellList& cellList;
+// maybe not the reference
   int box, cell, nCells;
+// GJS
 };
 
 inline CellList::Pairs::Pairs(const CellList& cellList, int box) :
