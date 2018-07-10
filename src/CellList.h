@@ -42,7 +42,7 @@ public:
     // Here is where molecules cc goes
 
     // I think this will work
-    dimensions = rhs.dimensions;
+//    *dimensions = *rhs.dimensions;
 
     cutoff = rhs.cutoff;
     isBuilt = rhs.isBuilt;

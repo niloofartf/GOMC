@@ -1155,7 +1155,7 @@ int replica_exchange(FILE *fplog, struct gmx_repl_ex *re,
                 if ((exchange_partner != replica_id))
                 {
                     /* Exchange the global states between the master nodes */
-                    printf("GJS Exchanging %d with %d, step : %d, m : %d\n", replica_id, exchange_partner, step, step / replExParams->exchangeInterval % 2);
+                    printf("GJS Exchanging %d (volume %f) with %d, step : %d, m : %d\n", replica_id, vol_par, exchange_partner, step, step / replExParams->exchangeInterval % 2);
                     return exchange_partner;
                     //exchange_state(state, exchange_partner, replExParams);
                 }

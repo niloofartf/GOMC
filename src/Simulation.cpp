@@ -293,7 +293,7 @@ void Simulation::GetTemp(System* system, Simulation* sim){
     system->coordinates         =   sim->system->coordinates;
     system->cellList            =   sim->system->cellList;
 #if ENSEMBLE == NPT
-    system->boxDimensions       =   sim->system->boxDimensions;
+    system->boxDimRef           =   sim->system->boxDimRef;
 #endif
 //    *(system->calcEwald)        =   *(sim->system->calcEwald);
 
@@ -306,7 +306,7 @@ void Simulation::SetTemp(System* system_set, Simulation* sim){
     sim->system->coordinates    =   system_set->coordinates;
     sim->system->cellList       =   system_set->cellList;
 #if ENSEMBLE == NPT
-    sim->system->boxDimensions  =   system_set->boxDimensions;
+    sim->system->boxDimRef     =    system_set->boxDimRef;
 #endif
 
 //    *(sim->system->calcEwald)      =   *(system_set->calcEwald);

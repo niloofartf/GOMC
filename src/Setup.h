@@ -76,7 +76,7 @@ public:
         printf("FAST I tried searching %s for %s\n", (config.in.files.pdb.name[0]).c_str(), suffix1.c_str());
         if (found!=std::string::npos){
             printf("FAST I found %s at position %lu in %s\n", suffix1.c_str(), found, (config.in.files.pdb.name[0]).c_str()); 
-            string temp_in = std::to_string((int)(config.sys.T.replica_temps[0]));
+            string temp_in = std::to_string((int)(config.sys.T.inKelvin));
             temp_in += 'K';
             printf("FAST temp_in : %s\n", temp_in.c_str());
             inputFileString1.insert(found, temp_in);
@@ -108,7 +108,7 @@ public:
     if (!inputFileReader2.is_open()) {
         std::size_t found = inputFileString2.find(suffix2);
         if (found!=std::string::npos){
-            string temp_in = std::to_string((int)(config.sys.T.replica_temps[0]));
+            string temp_in = std::to_string((int)(config.sys.T.inKelvin));
             temp_in += 'K';
             inputFileString2.insert(found, temp_in);
             inputFileReader2.open(inputFileString2.c_str(), ios::in | ios::out);
