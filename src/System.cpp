@@ -84,9 +84,16 @@ void System::Init(Setup const& set)
   cellList.SetCutoff(statV.forcefield.rCut);
   cellList.GridAll(boxDimRef, coordinates, molLookupRef);
 
-  //check if we have to use cached version of ewlad or not.
-  bool ewald = set.config.sys.elect.ewald;
-  bool cached = set.config.sys.elect.cache;
+
+  // These being local prevents me from seeing it in simulation
+  // I use these to determine if I need to swap the Ewald Meshes
+  //bool ewald = set.config.sys.elect.ewald;
+  //bool cached = set.config.sys.elect.cache;
+  
+  
+  //check if we have to use cached version of ewald or not.
+  ewald = set.config.sys.elect.ewald;
+  cached = set.config.sys.elect.cache;
 
 #ifdef GOMC_CUDA
   if(ewald)

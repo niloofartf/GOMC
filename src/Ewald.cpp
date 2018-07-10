@@ -148,14 +148,11 @@ Ewald& Ewald::operator=(Ewald const& rhs){
     electrostatic           =   rhs.electrostatic; 
     ewald                   =   rhs.ewald;
 
-    // Since these are external references, I do a shallow copy
     // Note that nothing internally should be changed.
+    //  They should still point to the old address, which holds different values.
     //forcefield              =   rhs.forcefield;
     //mols                    =   rhs.mols;
     //molLookup               =   rhs.molLookup;
-
-    // I think the references to Box Dim, COM, and syspot can be left alone
-    //  They should still point to the old address, which is copy constructed from the replica
     //currentCoords           =   rhs.currentCoords;
     //currentCOM              =   rhs.currentCOM;
     //sysPotRef               =   rhs.sysPotRef;
