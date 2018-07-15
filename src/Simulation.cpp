@@ -63,8 +63,10 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
   //as system depends on staticValues, and cpu sometimes depends on both.
   Setup set;
   set.Init(configFileName, initiatingLoopIteration, replExParams);
+
   replica_log = set.config.out.statistics.settings.uniqueStr.val;
   replica_log += ".replica_log"; 
+ 
 // GJS
   usingRE = set.config.sys.usingRE;
   replica_temps = set.config.sys.T.replica_temps;
@@ -92,7 +94,6 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
   cpu = new CPUSide(*system, *staticValues);
   cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
             totalSteps);
-
   
   //Dump combined PSF
   PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap,
@@ -286,6 +287,8 @@ void Simulation::RunningCheck(const uint step)
 }
 #endif
 
+//  Console output to file handle in each replica
+
 void Simulation::GetTemp(System* system, Simulation* sim){
 
     system->potential           =   sim->system->potential;
@@ -297,7 +300,8 @@ void Simulation::GetTemp(System* system, Simulation* sim){
 #endif
 
     if(system->ewald){
-        *system->calcEwald      =   *sim->system->calcEwald;
+//        *system->calcEwald      =   *sim->system->calcEwald;
+        system->calcEwald      =   sim->system->calcEwald;
     }
 }
 

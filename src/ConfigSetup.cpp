@@ -231,6 +231,7 @@ void ConfigSetup::Init(const char *fileName)
           sys.gemc.pressure *= unit::BAR_TO_K_MOLECULE_PER_A3;
         } else {
             sys.usingRE = true; 
+            out.usingRE = true; 
             std::vector<double> replica_pressures;
 
             for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
@@ -256,6 +257,7 @@ void ConfigSetup::Init(const char *fileName)
         } else {
            
             sys.usingRE = true; 
+            out.usingRE = true; 
             std::vector<float> replica_temps;
 
             for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
@@ -508,6 +510,9 @@ void ConfigSetup::Init(const char *fileName)
             // Temperature is the first and only value in replica_temps
             out.statistics.settings.uniqueStr.val += std::to_string((int)sys.T.replica_temps[0]); 
             out.statistics.settings.uniqueStr.val += "K"; 
+            
+            out.temp = (int)sys.T.inKelvin;
+            
             printf("%-40s %-s \n", "Info: Output name", line[1].c_str());
         } else {
             out.statistics.settings.uniqueStr.val = line[1];
@@ -738,6 +743,7 @@ void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration, Replic
           sys.gemc.pressure *= unit::BAR_TO_K_MOLECULE_PER_A3;
         } else {
             sys.usingRE = true; 
+            out.usingRE = true; 
             std::vector<double> replica_pressures;
 
             for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
@@ -761,6 +767,7 @@ void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration, Replic
         } else {
            
             sys.usingRE = true; 
+            out.usingRE = true; 
             std::vector<float> replica_temps;
 
             for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
@@ -1016,6 +1023,9 @@ void ConfigSetup::Init(const char *fileName, int initiatingLoopIteration, Replic
         if (sys.usingRE){
             out.statistics.settings.uniqueStr.val = line[1];
             out.statistics.settings.uniqueStr.val += std::to_string((int)sys.T.replica_temps[initiatingLoopIteration]); 
+            
+            out.temp = (int)sys.T.inKelvin;
+
             out.statistics.settings.uniqueStr.val += "K"; 
             printf("%-40s %-s \n", "Info: Output name", line[1].c_str());
         } else {

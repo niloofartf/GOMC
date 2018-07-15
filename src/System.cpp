@@ -94,6 +94,7 @@ void System::Init(Setup const& set)
   //check if we have to use cached version of ewald or not.
   ewald = set.config.sys.elect.ewald;
   cached = set.config.sys.elect.cache;
+  usingRE = set.config.sys.usingRE;
 
 #ifdef GOMC_CUDA
   if(ewald)

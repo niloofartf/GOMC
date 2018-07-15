@@ -46,3 +46,5 @@ Job Script on Website to run simulation
 
 StaticVals holds pressure
 MoleculeKinds holds ChemicalPot
+
+No need to swap Pairs, Cell, and Neighbor derived classes in cellList.  These are regenerated each method call.

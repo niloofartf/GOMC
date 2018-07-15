@@ -141,6 +141,7 @@ protected:
   uint imageTotal;
   uint imageLarge;
   uint *kmax;
+// Verify that these pointers are swapping
   double **sumRnew; //cosine serries
   double **sumInew; //sine serries
   double **sumRref;

@@ -38,9 +38,6 @@ public:
         }
     }
 
-    // Molecules is kinda complex and doesnt have a cc, rats!
-    // Here is where molecules cc goes
-
     // Dimensions is a reference to the system's object
     // Doesnt need to be swapped here
     //  *dimensions = *rhs.dimensions;

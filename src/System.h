@@ -95,6 +95,7 @@ public:
 
   bool ewald;
   bool cached;
+  bool usingRE;
 
   //Procedure to run once move is picked... can also be called directly for
   //debugging...

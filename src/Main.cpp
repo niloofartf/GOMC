@@ -118,11 +118,11 @@ int main(int argc, char *argv[])
 
     Simulation sim(inputFileString.c_str());
     // GJS
-#if ENSEMBLE == NPT || ENSEMBLE == NVT
+#if ENSEMBLE == NPT || ENSEMBLE == NVT || ENSEMBLE == GCMC
     bool usingRE = sim.usingRE;
 #endif
 
-#if ENSEMBLE == NPT || ENSEMBLE == NVT
+#if ENSEMBLE == NPT || ENSEMBLE == NVT || ENSEMBLE == GCMC
     int numReplicas = sim.replica_temps.size();
 #endif
 
@@ -130,12 +130,12 @@ int main(int argc, char *argv[])
     int num_pressures = sim.replica_pressures.size();
 #endif
 
-#if ENSEMBLE == NPT || ENSEMBLE == NVT
+#if ENSEMBLE == NPT || ENSEMBLE == NVT || ENSEMBLE == GCMC
     if (!usingRE){
 #endif
         sim.RunSimulation();
         PrintSimulationFooter();
-#if ENSEMBLE == NPT || ENSEMBLE == NVT
+#if ENSEMBLE == NPT || ENSEMBLE == NVT || ENSEMBLE == GCMC
     } else {
         // Make N copies of sim
         // Set each with a temp value
@@ -148,6 +148,9 @@ int main(int argc, char *argv[])
 #endif
 #if ENSEMBLE == NPT
         std::cout << "I recognize you want to use NPT-RE.\n " << std::endl; 
+#endif
+#if ENSEMBLE == GCMC
+        std::cout << "I recognize you want to use GCMC-RE.\n " << std::endl; 
 #endif
         std::cout << "num replicas : " << numReplicas << "\n " << std::endl; 
         

@@ -6,7 +6,7 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 ********************************************************************************/
 #include "ConsoleOutput.h"          //For spec;
 #include "EnsemblePreprocessor.h"   //For BOX_TOTAL, ensemble
-#include "MoveConst.h"    //For move index constants, name constants.
+#include "MoveConst.h"              //For move index constants, name constants.
 #include "FFConst.h"                //For density conv.
 #include "System.h"                 //for init
 #include "StaticVals.h"             //for init
@@ -17,69 +17,141 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include <iostream>                 // std::cout, std::fixed
 #include <iomanip>                  // std::setprecision
 
+  
 void ConsoleOutput::DoOutput(const ulong step)
 {
-  if (step == 0) {
-    std::cout << std::endl << "################################################################################" << std::endl;
-    std::cout << "########################## INITIAL SIMULATION ENERGY ###########################" << std::endl << std::endl;
 
-    PrintEnergyTitle();
-    std::cout << std::endl;
+  if (usingRE){
+      printf("GJS entered usingRE\n");
+      if (step == 0) {
+        *rep_out << std::endl << "################################################################################" << std::endl;
+        *rep_out << "########################## INITIAL SIMULATION ENERGY ###########################" << std::endl << std::endl;
 
-    for (uint b = 0; b < BOX_TOTAL; b++) {
-      PrintEnergy(b, var->energyRef[b], var->virialRef[b], -1);
-      std::cout <<  std::endl;
-    }
+        PrintEnergyTitle();
+        *rep_out << std::endl;
 
-    if(enableStat) {
-      PrintStatisticTitle();
-      std::cout << std::endl;
+        for (uint b = 0; b < BOX_TOTAL; b++) {
+          PrintEnergy(b, var->energyRef[b], var->virialRef[b], -1);
+          *rep_out <<  std::endl;
+        }
 
-      for (uint b = 0; b < BOX_TOTAL; b++) {
-        PrintStatistic(b, -1);
-        std::cout << std::endl;
+        if(enableStat) {
+          PrintStatisticTitle();
+          *rep_out << std::endl;
+
+          for (uint b = 0; b < BOX_TOTAL; b++) {
+            PrintStatistic(b, -1);
+            *rep_out << std::endl;
+          }
+        }
+
+        *rep_out << "################################################################################" << std::endl;
+
+        *rep_out << "############################# STARTING SIMULATION ##############################" << std::endl << std::endl;
+
+        PrintMoveTitle();
+        *rep_out << std::endl;
+
+        if(enableEnergy) {
+          PrintEnergyTitle();
+          *rep_out << std::endl;
+        }
+
+        if(enableStat) {
+          PrintStatisticTitle();
+          *rep_out << std::endl;
+        }
+      } else {
+        for(uint b = 0; b < BOX_TOTAL; b++) {
+          PrintMove(b, step);
+          *rep_out << std::endl;
+
+          if(enableEnergy) {
+            PrintEnergy(b, var->energyRef[b], var->virialRef[b], step);
+            *rep_out << std::endl;
+          }
+
+          if(enableStat) {
+            PrintStatistic(b, step);
+            *rep_out << std::endl;
+          }
+
+          if(enablePressure) {
+            PrintPressureTensor(b, step);
+            *rep_out << std::endl;
+          }
+
+        }
+
       }
-    }
 
-    std::cout << "################################################################################" << std::endl;
 
-    std::cout << "############################# STARTING SIMULATION ##############################" << std::endl << std::endl;
 
-    PrintMoveTitle();
-    std::cout << std::endl;
-
-    if(enableEnergy) {
-      PrintEnergyTitle();
-      std::cout << std::endl;
-    }
-
-    if(enableStat) {
-      PrintStatisticTitle();
-      std::cout << std::endl;
-    }
   } else {
-    for(uint b = 0; b < BOX_TOTAL; b++) {
-      PrintMove(b, step);
-      std::cout << std::endl;
+      printf("GJS entered not usingRE\n");
 
-      if(enableEnergy) {
-        PrintEnergy(b, var->energyRef[b], var->virialRef[b], step);
+      if (step == 0) {
+        std::cout << std::endl << "################################################################################" << std::endl;
+        std::cout << "########################## INITIAL SIMULATION ENERGY ###########################" << std::endl << std::endl;
+
+        PrintEnergyTitle();
         std::cout << std::endl;
-      }
 
-      if(enableStat) {
-        PrintStatistic(b, step);
+        for (uint b = 0; b < BOX_TOTAL; b++) {
+          PrintEnergy(b, var->energyRef[b], var->virialRef[b], -1);
+          std::cout <<  std::endl;
+        }
+
+        if(enableStat) {
+          PrintStatisticTitle();
+          std::cout << std::endl;
+
+          for (uint b = 0; b < BOX_TOTAL; b++) {
+            PrintStatistic(b, -1);
+            std::cout << std::endl;
+          }
+        }
+
+        std::cout << "################################################################################" << std::endl;
+
+        std::cout << "############################# STARTING SIMULATION ##############################" << std::endl << std::endl;
+
+        PrintMoveTitle();
         std::cout << std::endl;
-      }
 
-      if(enablePressure) {
-        PrintPressureTensor(b, step);
-        std::cout << std::endl;
-      }
+        if(enableEnergy) {
+          PrintEnergyTitle();
+          std::cout << std::endl;
+        }
 
+        if(enableStat) {
+          PrintStatisticTitle();
+          std::cout << std::endl;
+        }
+      } else {
+        for(uint b = 0; b < BOX_TOTAL; b++) {
+          PrintMove(b, step);
+          std::cout << std::endl;
+
+          if(enableEnergy) {
+            PrintEnergy(b, var->energyRef[b], var->virialRef[b], step);
+            std::cout << std::endl;
+          }
+
+          if(enableStat) {
+            PrintStatistic(b, step);
+            std::cout << std::endl;
+          }
+
+          if(enablePressure) {
+            PrintPressureTensor(b, step);
+            std::cout << std::endl;
+          }
+
+        }
+
+      }
     }
-
-  }
 }
 
 void ConsoleOutput::PrintMove(const uint box, const ulong step) const
@@ -133,8 +205,11 @@ void ConsoleOutput::PrintMove(const uint box, const ulong step) const
   printElement(var->GetAcceptPercent(sub), elementWidth);
   printElement(var->GetScale(sub), elementWidth);
 #endif
-
-  std::cout << std::endl;
+  if (usingRE){
+    *rep_out << std::endl;
+  } else {
+    std::cout << std::endl;
+  }
 }
 
 void ConsoleOutput::PrintStatistic(const uint box, const ulong step) const
@@ -167,8 +242,11 @@ void ConsoleOutput::PrintStatistic(const uint box, const ulong step) const
     printElement(var->densityTot[box], elementWidth);
   if(enableSurfTension)
     printElement(var->surfaceTens[box], elementWidth);
-
-  std::cout << std::endl;
+  if (usingRE){
+    *rep_out << std::endl;
+  } else {  
+    std::cout << std::endl;
+  }
 }
 
 void ConsoleOutput::PrintPressureTensor(const uint box, const ulong step) const
@@ -209,7 +287,11 @@ void ConsoleOutput::PrintEnergy(const uint box, Energy const& en,
   printElement(en.recip, elementWidth);
   printElement(en.self, elementWidth);
   printElement(en.correction, elementWidth);
-  std::cout << std::endl;
+  if(usingRE){
+    *rep_out << std::endl;
+  } else {
+    std::cout << std::endl;
+  }
 }
 
 void ConsoleOutput::PrintEnergyTitle()
@@ -228,7 +310,11 @@ void ConsoleOutput::PrintEnergyTitle()
   printElement("RECIP", elementWidth);
   printElement("SELF", elementWidth);
   printElement("CORR", elementWidth);
-  std::cout << std::endl;
+  if (usingRE){
+      *rep_out << std::endl;
+  } else {
+      std::cout << std::endl;
+  }
 }
 
 void ConsoleOutput::PrintStatisticTitle()
@@ -261,8 +347,11 @@ void ConsoleOutput::PrintStatisticTitle()
     printElement("TOT_DENSITY", elementWidth);
   if(enableSurfTension)
     printElement("SURF_TENSION", elementWidth);
-
-  std::cout << std::endl;
+  if(usingRE){
+    *rep_out << std::endl;
+  } else {
+    std::cout << std::endl;
+  }
 }
 
 
@@ -303,40 +392,67 @@ void ConsoleOutput::PrintMoveTitle()
   printElement("VOLMAX", elementWidth);
 #endif
 
-  std::cout << std::endl;
+  if (usingRE){
+    *rep_out << std::endl;
+  } else {
+    std::cout << std::endl;
+  }
 }
 
 void ConsoleOutput::printElement(const double t, const int width,
                                  uint percision) const
 {
   const char separator = ' ';
-  if(abs(t) > 9999999999.9999) {
-    std::cout << right << std::fixed << std::setprecision(0) <<
-              setw(width) << setfill(separator) << 9999999999;
+  if (usingRE){
+      if(abs(t) > 9999999999.9999) {
+        *rep_out << right << std::fixed << std::setprecision(0) <<
+                  setw(width) << setfill(separator) << 9999999999;
+      } else {
+        *rep_out << right << std::fixed << std::setprecision(percision) <<
+                  setw(width) << setfill(separator) << t;
+      }
   } else {
-    std::cout << right << std::fixed << std::setprecision(percision) <<
-              setw(width) << setfill(separator) << t;
+      if(abs(t) > 9999999999.9999) {
+        std::cout << right << std::fixed << std::setprecision(0) <<
+                  setw(width) << setfill(separator) << 9999999999;
+      } else {
+        std::cout << right << std::fixed << std::setprecision(percision) <<
+                  setw(width) << setfill(separator) << t;
+      }
   }
-
 }
 
 void ConsoleOutput::printElement(const uint t, const int width) const
 {
   const char separator = ' ';
-  std::cout << right << std::fixed  << setw(width) <<
+  if(usingRE){
+    *rep_out << right << std::fixed << setw(width) <<
             setfill(separator) << t;
+  } else {
+    std::cout << right << std::fixed << setw(width) <<
+            setfill(separator) << t;
+  }
 }
 
 void ConsoleOutput::printElement(const std::string t, const int width) const
 {
   const char separator = ' ';
-  std::cout << right << std::fixed << setw(width) <<
+  if(usingRE){
+    *rep_out << right << std::fixed << setw(width) <<
             setfill(separator) << t;
+  } else {
+    std::cout << right << std::fixed << setw(width) <<
+            setfill(separator) << t;
+  }
 }
 
 template <typename T>
 void ConsoleOutput::printElementStep( const T t, const ulong step,
                                       const int width) const
 {
-  std::cout << t << right << setw(width - 7) << step;
+  if (usingRE) {
+      *rep_out << t << right << setw(width - 7) << step;
+  } else {
+      std::cout << t << right << setw(width - 7) << step;
+  }
 }

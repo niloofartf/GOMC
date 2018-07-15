@@ -22,6 +22,7 @@ public:
 // GJS  
   bool usingRE;
   std::string replica_log;
+
   std::vector<float> replica_temps;
   std::vector<double> replica_pressures;
 #if ENSEMBLE == NVT

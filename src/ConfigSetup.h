@@ -307,6 +307,9 @@ struct Output {
   SysState state, restart;
   Statistics statistics;
   EventSettings console;
+
+  bool usingRE;
+  int temp;
 };
 
 }
