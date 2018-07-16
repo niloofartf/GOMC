@@ -310,6 +310,7 @@ struct Output {
 
   bool usingRE;
   int temp;
+  int writingReplica;
 };
 
 }

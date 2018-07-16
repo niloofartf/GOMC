@@ -31,7 +31,7 @@ public:
 
 // GJS
   explicit Simulation(char const*const configFileName);
-  explicit Simulation(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams);
+  explicit Simulation(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams, int writingReplica);
   Simulation(void);
   ~Simulation();
 

@@ -56,7 +56,7 @@ Simulation::Simulation(char const*const configFileName)
   
 }
 
-Simulation::Simulation(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams)
+Simulation::Simulation(char const*const configFileName, int initiatingLoopIteration, ReplicaExchangeParameters* replExParams, int writingReplica)
 {
   //NOTE:
   //IMPORTANT! Keep this order...
@@ -91,6 +91,9 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
   //recal Init for static value for initializing ewald since ewald is
   //initialized in system
   staticValues->InitOver(set, *system);
+
+  set.config.out.writingReplica = writingReplica;
+
   cpu = new CPUSide(*system, *staticValues);
   cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
             totalSteps);

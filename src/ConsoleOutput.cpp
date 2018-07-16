@@ -23,68 +23,69 @@ void ConsoleOutput::DoOutput(const ulong step)
 
   if (usingRE){
       printf("GJS entered usingRE\n");
-      if (step == 0) {
-        *rep_out << std::endl << "################################################################################" << std::endl;
-        *rep_out << "########################## INITIAL SIMULATION ENERGY ###########################" << std::endl << std::endl;
+      if (writingReplica){
+          if (step == 0) {
+            *rep_out << std::endl << "################################################################################" << std::endl;
+            *rep_out << "########################## INITIAL SIMULATION ENERGY ###########################" << std::endl << std::endl;
 
-        PrintEnergyTitle();
-        *rep_out << std::endl;
-
-        for (uint b = 0; b < BOX_TOTAL; b++) {
-          PrintEnergy(b, var->energyRef[b], var->virialRef[b], -1);
-          *rep_out <<  std::endl;
-        }
-
-        if(enableStat) {
-          PrintStatisticTitle();
-          *rep_out << std::endl;
-
-          for (uint b = 0; b < BOX_TOTAL; b++) {
-            PrintStatistic(b, -1);
+            PrintEnergyTitle();
             *rep_out << std::endl;
-          }
-        }
 
-        *rep_out << "################################################################################" << std::endl;
+            for (uint b = 0; b < BOX_TOTAL; b++) {
+              PrintEnergy(b, var->energyRef[b], var->virialRef[b], -1);
+              *rep_out <<  std::endl;
+            }
 
-        *rep_out << "############################# STARTING SIMULATION ##############################" << std::endl << std::endl;
+            if(enableStat) {
+              PrintStatisticTitle();
+              *rep_out << std::endl;
 
-        PrintMoveTitle();
-        *rep_out << std::endl;
+              for (uint b = 0; b < BOX_TOTAL; b++) {
+                PrintStatistic(b, -1);
+                *rep_out << std::endl;
+              }
+            }
 
-        if(enableEnergy) {
-          PrintEnergyTitle();
-          *rep_out << std::endl;
-        }
+            *rep_out << "################################################################################" << std::endl;
 
-        if(enableStat) {
-          PrintStatisticTitle();
-          *rep_out << std::endl;
-        }
-      } else {
-        for(uint b = 0; b < BOX_TOTAL; b++) {
-          PrintMove(b, step);
-          *rep_out << std::endl;
+            *rep_out << "############################# STARTING SIMULATION ##############################" << std::endl << std::endl;
 
-          if(enableEnergy) {
-            PrintEnergy(b, var->energyRef[b], var->virialRef[b], step);
+            PrintMoveTitle();
             *rep_out << std::endl;
+
+            if(enableEnergy) {
+              PrintEnergyTitle();
+              *rep_out << std::endl;
+            }
+
+            if(enableStat) {
+              PrintStatisticTitle();
+              *rep_out << std::endl;
+            }
+          } else {
+            for(uint b = 0; b < BOX_TOTAL; b++) {
+              PrintMove(b, step);
+              *rep_out << std::endl;
+
+              if(enableEnergy) {
+                PrintEnergy(b, var->energyRef[b], var->virialRef[b], step);
+                *rep_out << std::endl;
+              }
+
+              if(enableStat) {
+                PrintStatistic(b, step);
+                *rep_out << std::endl;
+              }
+
+              if(enablePressure) {
+                PrintPressureTensor(b, step);
+                *rep_out << std::endl;
+              }
+
+            }
+
           }
-
-          if(enableStat) {
-            PrintStatistic(b, step);
-            *rep_out << std::endl;
-          }
-
-          if(enablePressure) {
-            PrintPressureTensor(b, step);
-            *rep_out << std::endl;
-          }
-
-        }
-
-      }
-
+    }
 
 
   } else {

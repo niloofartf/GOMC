@@ -158,8 +158,12 @@ int main(int argc, char *argv[])
         Simulation* sim_exchangers[numReplicas];
         ReplicaExchangeParameters replExParams;
 
+        int writingReplica;
+
+        writingReplica = 0;
+
         for (int i = 0 ; i < numReplicas; i++) {
-            sim_exchangers[i] = new Simulation(inputFileString.c_str(), i, &replExParams);
+            sim_exchangers[i] = new Simulation(inputFileString.c_str(), i, &replExParams, writingReplica);
         }
 
         if (numReplicas != numThreads){
@@ -170,12 +174,13 @@ int main(int argc, char *argv[])
  
         int counter;
         int i;
+        writingReplica = 1;
 
-        #pragma omp parallel for default(none) private(i) shared(numReplicas, inputFileString, sim_re, replExParams, sim_exchangers)
+        #pragma omp parallel for default(none) private(i) shared(numReplicas, inputFileString, sim_re, replExParams, sim_exchangers, writingReplica)
             for (i = 0; i < numReplicas; i++) {
              // overloaded Constructor with dynamic initialization for RE
              // uses the i-value to index into the temperature array, (and Pres array if NPT)
-                sim_re[i] = new Simulation(inputFileString.c_str(), i, &replExParams);
+                sim_re[i] = new Simulation(inputFileString.c_str(), i, &replExParams, writingReplica);
              // overloaded RunSim for RE
                 sim_re[i]->RunSimulation(&replExParams, sim_exchangers);
             }

@@ -67,6 +67,7 @@ public:
     }
 
     usingRE = output.usingRE;
+    writingReplica = output.writingReplica;
 
     directory_stream << "temp_" << output.temp;
     directory_name = directory_stream.str();
@@ -79,6 +80,8 @@ public:
             path_stream << "./" << out.statistics.settings.uniqueStr.val << ".console_out";
             path_string = path_stream.str();
         */
+        path_stream << "./" << directory_name << "/" << output.statistics.settings.uniqueStr.val << ".console_out";
+        path_string = path_stream.str();
     } else {
         printf("Creating directory : %s\n", directory_name.c_str());
         const int dir_err = mkdir(directory_name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -130,6 +133,7 @@ template <typename T> void printElementStep ( const T t, const ulong step,
   ofstream* rep_out;
 
   bool usingRE = 0;
+  bool writingReplica = 0;
 };
 
 #endif /*CONSOLE_OUTPUT_H*/
