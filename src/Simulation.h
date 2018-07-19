@@ -49,6 +49,12 @@ private:
   StaticVals * staticValues;
   CPUSide * cpu;
   ulong totalSteps;
+  
+  DIR *replica_directory = NULL;
+  std::stringstream directory_stream;
+  std::string directory_name;
+  std::stringstream path_stream;
+  std::string path_string;
 };
 
 #endif /*SIMULATION_H*/

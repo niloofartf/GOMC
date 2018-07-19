@@ -236,6 +236,10 @@ void ConfigSetup::Init(const char *fileName)
 
             for (auto itr = line.cbegin() + 1; itr != line.end(); itr++){
                 replica_pressures.push_back(stringtod(*itr));
+                if(replica_pressures[0]!=stringtod(*itr)){
+                    std::cout << "Error: Hyperparallel tempering in temperature and pressure not supported!\n";
+                    exit(EXIT_FAILURE);
+                }
             }
             // Since this will be the scenario when RE isnt used, the 
             // Pressure is the first and only value in replica_pressures

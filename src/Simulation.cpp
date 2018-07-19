@@ -63,9 +63,6 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
   //as system depends on staticValues, and cpu sometimes depends on both.
   Setup set;
   set.Init(configFileName, initiatingLoopIteration, replExParams);
-
-  replica_log = set.config.out.statistics.settings.uniqueStr.val;
-  replica_log += ".replica_log"; 
  
 // GJS
   usingRE = set.config.sys.usingRE;
@@ -97,7 +94,38 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
   cpu = new CPUSide(*system, *staticValues);
   cpu->Init(set.pdb, set.config.out, set.config.sys.step.equil,
             totalSteps);
-  
+
+  if(writingReplica){
+
+    directory_stream << "temp_" << staticValues->forcefield.T_in_K;
+    directory_name = directory_stream.str();
+    replica_directory = opendir(directory_name.c_str());
+
+    if(replica_directory){
+    
+        printf("Directory already exists : %s\n", directory_name.c_str());
+        /* Do whatever gromacs does here w the backups #1, #2, ect.
+            path_stream << "./" << out.statistics.settings.uniqueStr.val << ".console_out";
+            path_string = path_stream.str();
+        */
+        path_stream << "./" << directory_name << "/" << set.config.out.statistics.settings.uniqueStr.val << ".replica_log";
+        path_string = path_stream.str();
+    } else {
+        printf("Creating directory : %s\n", directory_name.c_str());
+        const int dir_err = mkdir(directory_name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if (-1 == dir_err){
+            printf("Error creating directory! Writing in pwd\n");
+            path_stream << "./" << set.config.out.statistics.settings.uniqueStr.val << ".replica_log";
+            path_string = path_stream.str();
+        } else {
+            path_stream << "./" << directory_name << "/" << set.config.out.statistics.settings.uniqueStr.val << ".replica_log";
+            path_string = path_stream.str();
+        }
+    }
+    
+        //replica_log = path_string.c_str();
+        replica_log = path_string;
+    }
   //Dump combined PSF
   PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap,
                    set.pdb.atoms.resKindNames);
