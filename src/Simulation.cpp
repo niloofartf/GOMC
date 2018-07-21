@@ -123,9 +123,41 @@ Simulation::Simulation(char const*const configFileName, int initiatingLoopIterat
         }
     }
     
-        //replica_log = path_string.c_str();
-        replica_log = path_string;
+    //replica_log = path_string.c_str();
+    replica_log = path_string;
+  }
+
+    fstream inputFileReader1;
+    //OPEN FILE
+    inputFileReader1.open(replica_log.c_str(), ios::in | ios::out);
+
+    //CHECK IF FILE IS OPENED...IF NOT OPENED EXCEPTION REASON FIRED
+    if (!inputFileReader1.is_open()) {
+        printf("No preexisting replica logs exist, writing  %s\n", replica_log.c_str());
+    } else {
+        bool fileNotUnique = true;
+        inputFileReader1.close();
+        int suffix = 1;
+
+        while(fileNotUnique){
+            std::string newFileName = replica_log;
+            newFileName += '#';
+            newFileName += to_string(suffix); 
+            
+            //OPEN FILE
+            inputFileReader1.open(newFileName.c_str(), ios::in | ios::out);
+            
+            if (!inputFileReader1.is_open()){
+                printf("Reached unique file name  %s\n", newFileName.c_str());
+                replica_log = newFileName;
+                fileNotUnique = false;
+            } else {
+                inputFileReader1.close();
+                suffix++;
+            }
+        }
     }
+
   //Dump combined PSF
   PSFOutput psfOut(staticValues->mol, *system, set.mol.kindMap,
                    set.pdb.atoms.resKindNames);

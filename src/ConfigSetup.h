@@ -227,7 +227,7 @@ struct ChemicalPotential {
 #endif
 struct SystemVals {
 // GJS
-  bool usingRE;
+  bool usingRE = 0;
 // GJS
   ElectroStatic elect;
   Temperature T;
@@ -310,7 +310,7 @@ struct Output {
 
   bool usingRE;
   int temp;
-  int writingReplica;
+  int writingReplica = 0;
 };
 
 }
