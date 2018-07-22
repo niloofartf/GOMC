@@ -88,12 +88,133 @@ void BlockAverage::DoWrite(const ulong step, uint precision)
 void BlockAverages::Init(pdb_setup::Atoms const& atoms,
                          config_setup::Output const& output)
 {
-  std::string name = "Blk_" + uniqueName + "_BOX_0.dat";
-  outBlock0.open(name.c_str(), std::ofstream::out);
+ // GJS DO IT HERE 
+  
+    usingRE = output.usingRE;
+    writingReplica = output.writingReplica;
+  
+  std::string name0; 
+  std::string name1;
+    
+    if (usingRE){
+    if (writingReplica){
+
+    directory_stream << "temp_" << output.temp;
+    directory_name = directory_stream.str();
+    replica_directory = opendir(directory_name.c_str());
+
+   if(replica_directory){
+    
+        printf("Directory already exists : %s\n", directory_name.c_str());
+        /* Do whatever gromacs does here w the backups #1, #2, ect.
+            path_stream << "./" << out.statistics.settings.uniqueStr.val << ".console_out";
+            path_string = path_stream.str();
+        */
+        path_stream << "./" << directory_name << "/";
+        path_string = path_stream.str();
+    } else {
+        printf("Creating directory : %s\n", directory_name.c_str());
+        const int dir_err = mkdir(directory_name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if (-1 == dir_err){
+            printf("Error creating directory! Writing in pwd\n");
+            path_stream << "./";
+            path_string = path_stream.str();
+        } else {
+            path_stream << "./" << directory_name << "/";
+            path_string = path_stream.str();
+        }
+    }
+
+
+  name0 = path_string + "Blk_" + uniqueName + "_BOX_0.dat";
+
   if(BOXES_WITH_U_NB >= 2) {
-    name = "Blk_" + uniqueName + "_BOX_1.dat";
-    outBlock1.open(name.c_str(), std::ofstream::out);
+    name1 = path_string + "Blk_" + uniqueName + "_BOX_1.dat";
   }
+ 
+
+
+    fstream inputFileReader1;
+    //OPEN FILE
+    inputFileReader1.open(name0.c_str(), ios::in | ios::out);
+
+    //CHECK IF FILE IS OPENED...IF NOT OPENED EXCEPTION REASON FIRED
+
+    if (!inputFileReader1.is_open()) {
+        printf("No preexisting Blk exist, writing  %s\n", name0.c_str());
+    } else {
+        bool fileNotUnique = true;
+        inputFileReader1.close();
+        int suffix = 1;
+
+        while(fileNotUnique){
+            std::string newFileName = name0;
+            newFileName += '#';
+            newFileName += to_string(suffix); 
+            
+            //OPEN FILE
+            inputFileReader1.open(newFileName.c_str(), ios::in | ios::out);
+            
+            if (!inputFileReader1.is_open()){
+                printf("Reached unique file name  %s\n", newFileName.c_str());
+                name0 = newFileName;
+                fileNotUnique = false;
+            } else {
+                inputFileReader1.close();
+                suffix++;
+            }
+        }
+    }
+
+  if(BOXES_WITH_U_NB >= 2) {
+
+    fstream inputFileReader2;
+    //OPEN FILE
+    inputFileReader2.open(name1.c_str(), ios::in | ios::out);
+
+    //CHECK IF FILE IS OPENED...IF NOT OPENED EXCEPTION REASON FIRED
+
+    if (!inputFileReader2.is_open()) {
+        printf("No preexisting Blk exist, writing  %s\n", name0.c_str());
+    } else {
+        bool fileNotUnique = true;
+        inputFileReader2.close();
+        int suffix = 1;
+
+        while(fileNotUnique){
+            std::string newFileName = name1;
+            newFileName += '#';
+            newFileName += to_string(suffix); 
+            
+            //OPEN FILE
+            inputFileReader2.open(newFileName.c_str(), ios::in | ios::out);
+            
+            if (!inputFileReader1.is_open()){
+                printf("Reached unique file name  %s\n", newFileName.c_str());
+                name1 = newFileName;
+                fileNotUnique = false;
+            } else {
+                inputFileReader2.close();
+                suffix++;
+            }
+        }
+    }
+    }
+
+
+  outBlock0.open(name0.c_str(), std::ofstream::out);
+ 
+  if(BOXES_WITH_U_NB >= 2) {
+    // You need to restore the ability for this to function in non-RE
+    //name1 = path_string + "Blk_" + uniqueName + "_BOX_1.dat";
+    outBlock1.open(name1.c_str(), std::ofstream::out);
+  }
+
+
+    }
+  }
+ 
+  
   InitVals(output.statistics.settings.block);
   AllocBlocks();
   InitWatchSingle(output.statistics.vars);

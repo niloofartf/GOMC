@@ -95,11 +95,46 @@ public:
         }
     }
 
+    if (usingRE){
+    if (writingReplica){
+
+    fstream inputFileReader1;
+    //OPEN FILE
+    inputFileReader1.open(path_string.c_str(), ios::in | ios::out);
+
+    //CHECK IF FILE IS OPENED...IF NOT OPENED EXCEPTION REASON FIRED
+    if (!inputFileReader1.is_open()) {
+        printf("No preexisting console outputs exist, writing  %s\n", path_string.c_str());
+    } else {
+        bool fileNotUnique = true;
+        inputFileReader1.close();
+        int suffix = 1;
+
+        while(fileNotUnique){
+            std::string newFileName = path_string;
+            newFileName += '#';
+            newFileName += to_string(suffix); 
+            
+            //OPEN FILE
+            inputFileReader1.open(newFileName.c_str(), ios::in | ios::out);
+            
+            if (!inputFileReader1.is_open()){
+                printf("Reached unique file name  %s\n", newFileName.c_str());
+                path_string = newFileName;
+                fileNotUnique = false;
+            } else {
+                inputFileReader1.close();
+                suffix++;
+            }
+        }
+    }
     const char *path = path_string.c_str();
 
     this->rep_out = new ofstream(path, std::ofstream::out);
 
     DoOutput(0);
+    }
+  }
   }
   virtual void DoOutput(const ulong step);
 
@@ -134,6 +169,7 @@ template <typename T> void printElementStep ( const T t, const ulong step,
 
   bool usingRE = 0;
   bool writingReplica = 0;
+
 };
 
 #endif /*CONSOLE_OUTPUT_H*/

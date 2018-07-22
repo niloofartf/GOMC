@@ -21,6 +21,9 @@ along with this program, also can be found at <http://www.gnu.org/licenses/>.
 #include "PDBSetup.h" //For atoms class.
 #include "BoxDimensions.h" //For BOXES_WITH_VOLUME
 #include "BoxDimensionsNonOrth.h"
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 #include <limits> //for std::numeric_limits
 
@@ -136,6 +139,18 @@ private:
   uint samplesWrites;
   //Constants
   double invSteps;
+  
+  DIR *replica_directory = NULL;
+  std::stringstream directory_stream;
+  std::string directory_name;
+  std::stringstream path_stream;
+  std::string path_string;
+
+  ofstream* rep_out;
+
+  bool usingRE = 0;
+  bool writingReplica = 0;
+
 };
 
 #endif /*BLOCK_OUTPUT_H*/
