@@ -123,7 +123,7 @@ void DCGraph::InitCrankShaft(const mol_setup::MolKind& kind)
         }
         //If there was no fix angles, we create DCCrankShaftDih
         if(!fixAngle) {
-          shaftNodesDih.push_back(new DCCrankShaftDih(&data, kind, a0, a1, a2, a3));
+          shaftNodes.push_back(new DCCrankShaftDih(&data, kind, a0, a1, a2, a3));
         }
         visited[a0] = true;
         visited[a1] = true;
@@ -164,7 +164,7 @@ void DCGraph::InitCrankShaft(const mol_setup::MolKind& kind)
         }
         //If there was no fix angles, we create DCCrankShaftDih
         if(!fixAngle) {
-          shaftNodesAng.push_back(new DCCrankShaftAng(&data, kind, a0, a1, a2));
+          shaftNodes.push_back(new DCCrankShaftAng(&data, kind, a0, a1, a2));
         }
         visited[a0] = true;
         visited[a1] = true;
@@ -175,20 +175,7 @@ void DCGraph::InitCrankShaft(const mol_setup::MolKind& kind)
     tempNodes.pop_back();
   }
 
-  hasCrankShaft = true;
-  if((shaftNodesAng.size() == 0) || (shaftNodesDih.size() == 0)) {
-    if(shaftNodesAng.size() == 0) {
-      shaftNodesAng = shaftNodesDih;
-    } else {
-      shaftNodesDih = shaftNodesAng;
-    }
-  }
-
-  if((shaftNodesAng.size() == 0) && (shaftNodesDih.size() == 0)) {
-    hasCrankShaft = false;
-  }
-
-
+  hasCrankShaft = (shaftNodes.size() != 0);
 }
 
 void DCGraph::CrankShaft(TrialMol& oldMol, TrialMol& newMol, uint molIndex)
@@ -198,9 +185,6 @@ void DCGraph::CrankShaft(TrialMol& oldMol, TrialMol& newMol, uint molIndex)
     //Instead we perform Regrowth move within the same box
     Regrowth(oldMol, newMol, molIndex);
   } else {
-    //Decide to perform rotation around two atoms that form angle or dihedral
-   std::vector<DCComponent*>& shaftNodes = data.prng.randInt(1) ?
-     shaftNodesDih : shaftNodesAng;
     //Pick a random node pair
     uint pick = data.prng.randIntExc(shaftNodes.size());
     //Call DCCrankShaftDih and rotate a1 and a2 nodes around a0-a3 shaft
@@ -595,6 +579,7 @@ void DCGraph::BuildGrowNew(TrialMol& newMol, uint molIndex)
 
 DCGraph::~DCGraph()
 {
+  delete idExchange;
   for(uint v = 0; v < nodes.size(); ++v) {
     Node& node = nodes[v];
     delete node.starting;
@@ -603,7 +588,10 @@ DCGraph::~DCGraph()
       delete node.edges[e].component;
     }
   }
-  delete idExchange;
+
+  for(uint i = 0; i < shaftNodes.size(); i++) {
+    delete shaftNodes[i];
+  }
 }
 
 
