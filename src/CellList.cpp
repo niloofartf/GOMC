@@ -24,6 +24,13 @@ CellList::CellList(const Molecules& mols,  BoxDimensions& dims)
   }
 }
 
+void CellList::SetCutoff()
+{
+  for(uint b = 0; b < BOX_TOTAL; b++) {
+    cutoff[b] = dimensions->rCut[b];
+  }
+}
+
 bool CellList::IsExhaustive() const
 {
   std::vector<int> particles(list);
