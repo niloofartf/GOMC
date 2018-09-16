@@ -20,7 +20,6 @@ CellList::CellList(const Molecules& mols,  BoxDimensions& dims)
   isBuilt = false;
   for(uint b = 0; b < BOX_TOTAL; b++) {
     edgeCells[b][0] = edgeCells[b][1] = edgeCells[b][2] = 0;
-    cutoff[b] = dims.rCut[b];
   }
 }
 
